@@ -1,0 +1,23 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Household State is already configured."
+    },
+    "step": {
+      "user": {
+        "title": "Household State",
+        "description": "Resolves the household stage, directive and integrity axes from the existing threat sources, plus the QUIET modifier from sleep mode. Runs beside sensor.home_threat_posture and changes nothing about it."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Household State options",
+        "data": {
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    }
+  }
+}
