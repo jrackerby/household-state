@@ -38,7 +38,7 @@ class HouseholdStateOptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Optional("scan_interval", default=current): vol.All(
-                        vol.Coerce(int), vol.Range(min=10, max=300)
+                        vol.Coerce(int), vol.Range(min=1, max=300)
                     )
                 }
             ),

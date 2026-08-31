@@ -110,15 +110,21 @@ PLATFORMS = ["sensor", "binary_sensor"]
 # read-only mirror and not a SOURCES row.
 QUIET_SOURCE_ENTITY = "input_boolean.sleep_mode"
 
-# 30s is cheap: every source in 0.1.0 is a state-machine read, no IO.
-# Do not raise this without measuring — a poll interval longer than the
-# fall dwell makes the dwell meaningless.
-DEFAULT_SCAN_INTERVAL = 30
+# Every source in 0.1.0 is a state-machine read, no IO — cheap enough
+# that 3s costs nothing extra over 30s. Lowered from 30 (GH-437) so a
+# rise publishes within one poll instead of up to 30s late. Do not raise
+# this without measuring — a poll interval longer than the fall dwell
+# makes the dwell meaningless.
+DEFAULT_SCAN_INTERVAL = 3
 
 # RULE 3. Seconds a fall in stage severity is held before it publishes.
-# A rise is never held. 120 covers KAN-206's observed 0-4s flaps with
-# two orders of magnitude of margin.
-FALL_DWELL = 120
+# A rise is never held. Lowered from 120 to 8 (GH-437) to cut
+# tablet-visible clear-down lag under the DEFAULT_SCAN_INTERVAL=3 poll.
+# Still 2x KAN-206's observed 0-4s flaps, but nowhere near the old two
+# orders of magnitude of margin — a flap that lands late in this window,
+# or repeats, can now slip through as a real fall. Accepted trade
+# (Joel, GH-437): under-10s clear-down over near-total flap immunity.
+FALL_DWELL = 8
 
 # Storage. RULE 5.
 STORE_KEY = "household_state.ages"
