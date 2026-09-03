@@ -53,6 +53,40 @@ jobs:
 
       - uses: home-assistant/actions/hassfest@master
 
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # NO homeassistant INSTALL, DELIBERATELY. tests/ha_stubs.py supplies the
+      # slice of core the coordinator imports, so this job is seconds long and
+      # a red result is attributable to THIS repo rather than to a core release
+      # moving under it. The trade is stated in that file's docstring: it
+      # proves nothing about core's real registry APIs, which is why both
+      # registry lookups in the coordinator keep their RULE 1 guards.
+      - run: pip install pytest
+
+      # cd, not `pytest tests/`: the repo root carries the integration's own
+      # __init__.py, and any collection tree containing it makes a pytest
+      # Package out of the root whose setup() imports that file as a top-level
+      # module. tests/pytest.ini carries the long version.
+      - name: pytest
+        run: ./tools/run_tests.sh -q
+
+      # A gate that could not run is not a pass. `pytest -q` exits 0 on
+      # "no tests ran", so an import or staging break that collects nothing
+      # would report green over a suite that never executed.
+      - name: assert the suite is not empty
+        run: |
+          COUNT=$(cd tests && python -m pytest --collect-only -q 2>/dev/null | grep -c '::' || true)
+          test "$COUNT" -gt 0 \
+            || { echo "CANNOT RUN: zero tests collected -- the pytest step above passed vacuously"; exit 1; }
+          echo "collected $COUNT tests"
+
   hacs:
     runs-on: ubuntu-latest
     steps:

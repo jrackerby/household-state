@@ -1,0 +1,169 @@
+"""Enough of `homeassistant` to import coordinator.py without installing core.
+
+WHY A STUB AND NOT pytest-homeassistant-custom-component. The behaviour under
+test is this integration's OWN log-dedupe policy — which condition token is
+compared, at which level it lands, and whether it is armed yet. None of that
+touches core's event loop, its registries' real semantics, or a config entry.
+A stub keeps the test runnable in CI in seconds and keeps a green result
+attributable to this repo rather than to a core version bump.
+
+It proves nothing about core's real registry APIs. `_live_page_entity_ids` and
+`_perimeter_entity_ids` are both wrapped in RULE 1 guards precisely because
+those APIs can move under an upgrade, and no test here can see that happen.
+"""
+
+from __future__ import annotations
+
+import sys
+import types
+from datetime import datetime, timezone
+
+
+def install() -> None:
+    """Register the stub modules in sys.modules. Idempotent."""
+    if "homeassistant" in sys.modules:
+        return
+
+    def mod(name: str) -> types.ModuleType:
+        m = types.ModuleType(name)
+        sys.modules[name] = m
+        return m
+
+    mod("homeassistant")
+
+    core = mod("homeassistant.core")
+
+    class HomeAssistant:  # noqa: D101
+        pass
+
+    def callback(fn):  # noqa: D103
+        return fn
+
+    core.HomeAssistant = HomeAssistant
+    core.callback = callback
+
+    config_entries = mod("homeassistant.config_entries")
+
+    class ConfigEntryState:  # noqa: D101
+        LOADED = "loaded"
+        SETUP_RETRY = "setup_retry"
+
+    class ConfigEntry:  # noqa: D101
+        pass
+
+    config_entries.ConfigEntryState = ConfigEntryState
+    config_entries.ConfigEntry = ConfigEntry
+
+    mod("homeassistant.helpers")
+
+    er = mod("homeassistant.helpers.entity_registry")
+    er.async_get = lambda hass: hass.entity_registry
+    er.async_entries_for_label = lambda reg, label_id: [
+        e for e in reg.entities.values() if label_id in getattr(e, "labels", ())
+    ]
+    er.async_entries_for_config_entry = lambda reg, entry_id: [
+        e for e in reg.entities.values() if getattr(e, "config_entry_id", None) == entry_id
+    ]
+
+    lr = mod("homeassistant.helpers.label_registry")
+    lr.async_get = lambda hass: hass.label_registry
+
+    storage = mod("homeassistant.helpers.storage")
+
+    class Store:  # noqa: D101
+        def __init__(self, hass, version, key):
+            self._data = {}
+
+        async def async_load(self):
+            return dict(self._data)
+
+        async def async_save(self, data):
+            self._data = dict(data)
+
+    storage.Store = Store
+
+    start = mod("homeassistant.helpers.start")
+    start.async_at_started = lambda hass, cb: (lambda: None)
+
+    uc = mod("homeassistant.helpers.update_coordinator")
+
+    class DataUpdateCoordinator:  # noqa: D101
+        def __init__(self, hass, logger, name=None, update_interval=None):
+            self.hass = hass
+            self.logger = logger
+            self.name = name
+            self.update_interval = update_interval
+
+    uc.DataUpdateCoordinator = DataUpdateCoordinator
+
+    mod("homeassistant.util")
+    dt = mod("homeassistant.util.dt")
+    dt.utcnow = lambda: datetime.now(timezone.utc)
+
+    def parse_datetime(value):
+        try:
+            return datetime.fromisoformat(value)
+        except (TypeError, ValueError):
+            return None
+
+    dt.parse_datetime = parse_datetime
+
+
+class FakeState:
+    """`hass.states.get()`'s return shape, reduced to what is read."""
+
+    def __init__(self, state, **attributes):
+        self.state = state
+        self.attributes = attributes
+
+
+class FakeStates:
+    def __init__(self, mapping=None):
+        self._m = dict(mapping or {})
+
+    def get(self, entity_id):
+        return self._m.get(entity_id)
+
+    def set(self, entity_id, state):
+        self._m[entity_id] = state
+
+    def drop(self, entity_id):
+        self._m.pop(entity_id, None)
+
+
+class FakeRegistryEntry:
+    def __init__(self, entity_id, platform=None, unique_id=None, labels=(),
+                 config_entry_id=None):
+        self.entity_id = entity_id
+        self.platform = platform
+        self.unique_id = unique_id
+        self.labels = labels
+        self.config_entry_id = config_entry_id
+
+
+class FakeEntityRegistry:
+    def __init__(self, entries=()):
+        self.entities = {e.entity_id: e for e in entries}
+
+
+class FakeLabelRegistry:
+    def __init__(self, labels=()):
+        self._by_id = {name: name for name in labels}
+
+    def async_get_label(self, label_id):
+        return _Label(label_id) if label_id in self._by_id else None
+
+    def async_get_label_by_name(self, name):
+        return _Label(name) if name in self._by_id else None
+
+
+class _Label:
+    def __init__(self, label_id):
+        self.label_id = label_id
+
+
+class FakeHass:
+    def __init__(self, states=None, entity_registry=None, label_registry=None):
+        self.states = FakeStates(states)
+        self.entity_registry = entity_registry or FakeEntityRegistry()
+        self.label_registry = label_registry or FakeLabelRegistry()
