@@ -6,7 +6,7 @@ import logging
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er, label_registry as lr
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -40,6 +40,13 @@ _LOGGER = logging.getLogger(__name__)
 
 _BAD_STATES = ("unavailable", "unknown", "none", "")
 
+# Condition tokens that mean SOMEBODY MUST EDIT SOMETHING, as opposed to a
+# source that is merely unreadable right now. These log at WARNING; every
+# other token logs at INFO, per the quality scale's log-when-unavailable.
+_DEFECT_STATES = frozenset(
+    {"missing", "label_absent", "label_empty", "unparsed", "registry_error"}
+)
+
 
 class HouseholdStateCoordinator(DataUpdateCoordinator):
     """Reads every source, resolves, holds falls, persists ages.
@@ -65,6 +72,8 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._held_severity = None
         self._held_since = None
         self._warned: dict = {}
+        # Armed by async_at_started; see async_arm_logging.
+        self._log_armed = False
 
     async def async_load_ages(self) -> None:
         """RULE 5. Must run BEFORE the first refresh, or every age
@@ -86,16 +95,66 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             return now
         return row.get("since")
 
-    def _warn_once(self, key: str, message: str) -> None:
-        """Transport warnings log ONCE at the crossing and once on
-        recovery, not every poll. A warning that repeats forever is as
-        unreadable as no warning (kiosk_pi §16.3)."""
-        if self._warned.get(key) != message:
-            self._warned[key] = message
-            if message:
-                _LOGGER.warning("household_state: %s", message)
-            else:
-                _LOGGER.info("household_state: %s recovered", key)
+    @callback
+    def async_arm_logging(self, _hass: HomeAssistant | None = None) -> None:
+        """Start logging source conditions. Called from async_at_started.
+
+        Until HA reaches RUNNING, every source this integration reads is
+        expected to be blind: the registry restores an entity row long
+        before the integration that owns it has published a state, so the
+        first polls see `st is None` for kiosk sensors and perimeter
+        contacts that are merely still starting. Logging that is noise
+        about HA's boot, not about the estate.
+
+        Only the LOGGING is gated. The readings themselves are unchanged
+        and still publish `absent` / `unknown` on the entity attributes
+        throughout startup — collapsing those into `ok` is KAN-139 and is
+        exactly what this integration exists to refuse.
+        """
+        self._log_armed = True
+
+    def _warn_once(self, key: str, state: str, detail: str = "") -> None:
+        """Log a source condition ONCE at the crossing and once on recovery.
+
+        HA quality scale, `log-when-unavailable`: log once in total, and
+        once again on recovery, at INFO level. A source that cannot be
+        read is not an integration error — it is this integration's whole
+        output, already published on the entity attributes every surface
+        reads. A WARNING per poll duplicates that and buries the one class
+        that is not routine.
+
+        TWO ARGUMENTS, NOT ONE, AND THIS IS THE FIX. `state` is a stable
+        condition token and is the ONLY thing compared; `detail` is the
+        human sentence and is never compared. Deduping on the message
+        itself is not deduping: the perimeter and live_page messages carry
+        a count and a member list, so "4 unreadable" and "1 unreadable"
+        were different strings and each re-fired a warning while the
+        condition never changed. The live count belongs on the entity,
+        which is where a dashboard reads it, not in a repeated log line.
+
+        `_DEFECT_STATES` is the exception the rule leaves room for: a
+        source entity that does not exist, a label that does not resolve,
+        an attribute that will not parse. Nobody waits those out — somebody
+        has to edit something — so they stay WARNING.
+        """
+        if not self._log_armed:
+            # Deliberately records nothing: a state recorded while silent
+            # would read as already-reported once armed, and a genuinely
+            # missing source would then never log at all.
+            return
+        prev = self._warned.get(key)
+        if prev == state:
+            return
+        self._warned[key] = state
+        if state:
+            _log = _LOGGER.warning if state in _DEFECT_STATES else _LOGGER.info
+            _log("household_state: %s", detail or state)
+        elif prev:
+            # `elif prev`, never a bare `else`: on the first poll every
+            # healthy source arrives here with prev None, and announcing a
+            # recovery from a fault that never happened is a false reading
+            # in the direction that trains an operator to ignore the log.
+            _LOGGER.info("household_state: %s recovered", key)
 
     def _read_source(self, spec: dict) -> dict:
         """One source -> one reading. NEVER returns severity 0 for a
@@ -131,17 +190,19 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         if st is None:
             # KAN-182 lives here: an entity that was never set up is a
             # different fact from an entity reporting all clear.
-            self._warn_once(spec["key"], eid + " does not exist (never set up?)")
+            self._warn_once(
+                spec["key"], "missing", eid + " does not exist (never set up?)"
+            )
             return base
 
         base["raw_state"] = st.state
         if st.state == "unavailable":
             base["disposition"] = DISP_UNREACHABLE
-            self._warn_once(spec["key"], eid + " is unavailable")
+            self._warn_once(spec["key"], "unavailable", eid + " is unavailable")
             return base
         if st.state in ("unknown", ""):
             base["disposition"] = DISP_UNKNOWN
-            self._warn_once(spec["key"], eid + " is unknown")
+            self._warn_once(spec["key"], "unknown", eid + " is unknown")
             return base
 
         self._warn_once(spec["key"], "")
@@ -165,13 +226,17 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 base["disposition"] = DISP_UNPARSED
                 base["detail"] = spec["pairs_attr"] + " attribute absent"
                 self._warn_once(
-                    spec["key"], eid + " has no " + spec["pairs_attr"] + " attribute"
+                    spec["key"],
+                    "unparsed",
+                    eid + " has no " + spec["pairs_attr"] + " attribute",
                 )
                 return base
             if not isinstance(pairs, (list, tuple)):
                 base["disposition"] = DISP_UNPARSED
                 base["detail"] = "cap pairs did not parse as a list"
-                self._warn_once(spec["key"], eid + " cap pairs did not parse as a list")
+                self._warn_once(
+                spec["key"], "unparsed", eid + " cap pairs did not parse as a list"
+            )
                 return base
             base["disposition"] = DISP_OK
             base["pairs"] = [p for p in pairs if isinstance(p, dict)]
@@ -224,11 +289,19 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             "quiet_raw_state": None,
         }
         if st is None:
-            self._warn_once("quiet", QUIET_SOURCE_ENTITY + " does not exist (never set up?)")
+            self._warn_once(
+                "quiet",
+                "missing",
+                QUIET_SOURCE_ENTITY + " does not exist (never set up?)",
+            )
             return base
         base["quiet_raw_state"] = st.state
         if st.state in ("unavailable", "unknown", ""):
-            self._warn_once("quiet", QUIET_SOURCE_ENTITY + " is " + (st.state or "empty"))
+            self._warn_once(
+                "quiet",
+                st.state or "empty",
+                QUIET_SOURCE_ENTITY + " is " + (st.state or "empty"),
+            )
             return base
         self._warn_once("quiet", "")
         base["quiet"] = st.state == "on"
@@ -262,7 +335,9 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             )
         except Exception as exc:  # noqa: BLE001 — RULE 1
             self._warn_once(
-                "perimeter_registry", "perimeter label lookup failed: " + str(exc)
+                "perimeter_registry",
+                "registry_error",
+                "perimeter label lookup failed: " + str(exc),
             )
             return None
 
@@ -291,13 +366,17 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["disposition"] = DISP_ABSENT
             base["detail"] = "label " + PERIMETER_LABEL + " does not resolve"
             self._warn_once(
-                spec["key"], "perimeter label " + PERIMETER_LABEL + " does not resolve"
+                spec["key"],
+                "label_absent",
+                "perimeter label " + PERIMETER_LABEL + " does not resolve",
             )
             return base
         if not ents:
             base["disposition"] = DISP_ABSENT
             base["detail"] = "no contacts or covers carry label " + PERIMETER_LABEL
-            self._warn_once(spec["key"], "perimeter label resolves to zero members")
+            self._warn_once(
+                spec["key"], "label_empty", "perimeter label resolves to zero members"
+            )
             return base
 
         now = dt_util.utcnow()
@@ -347,8 +426,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 + str(len(ents))
                 + " unreadable"
             )
+            # "blind", never the count: the membership moves as contacts
+            # come back and every move used to re-fire this line.
             self._warn_once(
                 spec["key"],
+                "blind",
                 str(len(blind)) + " perimeter member(s) unreadable: " + ", ".join(blind),
             )
             return base
@@ -380,7 +462,9 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             )
         except Exception as exc:  # noqa: BLE001 — RULE 1
             self._warn_once(
-                "live_page_registry", "kiosk_pi live_page discovery failed: " + str(exc)
+                "live_page_registry",
+                "registry_error",
+                "kiosk_pi live_page discovery failed: " + str(exc),
             )
             return None
 
@@ -456,8 +540,10 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 "cannot confirm live page health: "
                 + str(len(blind)) + " of " + str(len(ent_ids)) + " unreadable"
             )
+            # Same token rule as the perimeter row above.
             self._warn_once(
                 spec["key"],
+                "blind",
                 str(len(blind)) + " live_page sensor(s) unreadable: " + ", ".join(blind),
             )
             return base
@@ -508,7 +594,9 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             entries = self.hass.config_entries.async_entries()
         except Exception as exc:  # noqa: BLE001 — RULE 1
             self._warn_once(
-                "config_entries_registry", "config_entries read failed: " + str(exc)
+                "config_entries_registry",
+                "registry_error",
+                "config_entries read failed: " + str(exc),
             )
             base["disposition"] = DISP_ABSENT
             base["detail"] = "config_entries registry unreadable"
@@ -542,6 +630,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 # must never take the whole coordinator update down with it.
                 self._warn_once(
                     "cfgentry_read:" + getattr(entry, "entry_id", "?"),
+                    "registry_error",
                     "config entry read failed: " + str(exc),
                 )
                 continue

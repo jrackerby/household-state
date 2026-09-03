@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.start import async_at_started
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, PLATFORMS
 from .coordinator import HouseholdStateCoordinator
@@ -25,6 +26,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    # Source-condition logging stays silent until HA reaches RUNNING. Every
+    # source here is another integration's entity, and the registry restores
+    # an entity row well before its owner publishes a state -- so the polls
+    # during boot see a house with no doors and no kiosks and said so, once
+    # per membership change, for the length of the boot. The READINGS are
+    # untouched; only the log is gated. See coordinator.async_arm_logging.
+    entry.async_on_unload(async_at_started(hass, coordinator.async_arm_logging))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     return True
