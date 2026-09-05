@@ -94,7 +94,40 @@ def install() -> None:
             self.name = name
             self.update_interval = update_interval
 
+    class CoordinatorEntity:  # noqa: D101
+        def __init__(self, coordinator):
+            self.coordinator = coordinator
+
     uc.DataUpdateCoordinator = DataUpdateCoordinator
+    uc.CoordinatorEntity = CoordinatorEntity
+
+    # Enough of the sensor platform to import sensor.py. GH-562 put real
+    # behaviour in SourceSensor.native_value -- which of two facts about a
+    # source its state reports -- and that is policy this repo owns, so it is
+    # testable here for the same reason the log-dedupe policy is. None of it
+    # touches core's entity machinery; these are name-holders only.
+    dr = mod("homeassistant.helpers.device_registry")
+
+    class DeviceInfo(dict):  # noqa: D101
+        def __init__(self, **kw):
+            super().__init__(**kw)
+
+    dr.DeviceInfo = DeviceInfo
+
+    const = mod("homeassistant.const")
+
+    class EntityCategory:  # noqa: D101
+        DIAGNOSTIC = "diagnostic"
+
+    const.EntityCategory = EntityCategory
+
+    mod("homeassistant.components")
+    sensor_mod = mod("homeassistant.components.sensor")
+
+    class SensorEntity:  # noqa: D101
+        pass
+
+    sensor_mod.SensorEntity = SensorEntity
 
     mod("homeassistant.util")
     dt = mod("homeassistant.util.dt")

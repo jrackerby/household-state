@@ -259,6 +259,15 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["integrity_detail"] = st.attributes.get(spec["detail_attr"])
             base["affected"] = st.attributes.get(spec["affected_attr"]) or 0
             base["detail"] = base["integrity_detail"]
+            # GH-565: CARRY WHICH ATTRIBUTE WAS READ, not just which
+            # entity. Two rows deliberately share sensor.fls_device_status
+            # and are distinguished only by their triple. With `entity_id`
+            # alone on the reading, the two per-source entities were
+            # indistinguishable on glass and got reported as one row
+            # duplicated onto another's subject. The binding was correct;
+            # it was unreadable. Naming the attribute here is what makes
+            # that checkable without opening const.py.
+            base["integrity_attr"] = spec["integrity_attr"]
             return base
 
         # severity_attr

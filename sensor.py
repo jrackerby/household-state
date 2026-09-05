@@ -13,7 +13,7 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import EntityCategory
 
-from .const import DOMAIN, SOURCES
+from .const import DISP_OK, DOMAIN, INTEGRITY_OK, SOURCES
 from .entity import HouseholdStateEntity
 
 
@@ -135,7 +135,34 @@ class IntegritySensor(_Base):
 
 class SourceSensor(_Base):
     """One per registry row. Diagnostic: this is where a dead feed
-    becomes visible instead of becoming a zero."""
+    becomes visible instead of becoming a zero.
+
+    THE STATE IS THE WORST THING KNOWN ABOUT THE SOURCE, NOT MERELY
+    WHETHER IT COULD BE READ (GH-562). It used to be `disposition` alone,
+    and disposition answers a narrower question than the name on the
+    entity suggests: `ok` there means "the read succeeded", never "the
+    source is healthy". So a row that read cleanly and reported DEGRADED
+    published `ok` — sensor.household_state_critical_networking_device_health
+    sat at `ok` with `Spectrum: could not read WAN latency` in its own
+    detail, underneath a roll-up correctly reporting it degraded.
+
+    That is LAW 11's `ok at zero` and `could not read` collapsing into
+    one value at exactly the layer built to keep them apart, and LAW 10's
+    monitor whose blind spot correlates with its own subject: any surface
+    rendering per-source rows showed all-green under a degraded roll-up.
+
+    The two facts stay separate as ATTRIBUTES — `disposition` for the
+    read, `integrity` for the verdict — and the state reports the worse
+    of them. An unreadable source still wins, because a verdict computed
+    from a failed read is not a verdict; the resolver orders them the
+    same way (unknown_rows before degraded_rows).
+
+    STAGE rows are untouched by construction: nothing writes `integrity`
+    on them, so their state is still the disposition it always was. The
+    axis is not tested here — the presence of the key is the condition,
+    which keeps a future non-integrity row carrying a verdict from
+    needing a change in this file.
+    """
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -145,20 +172,46 @@ class SourceSensor(_Base):
         self._attr_name = spec["name"]
         self._attr_unique_id = entry_id + "_src_" + spec["key"]
 
+    def _reading(self):
+        d = self.coordinator.data or {}
+        return (d.get("readings") or {}).get(self._key) or {}
+
     @property
     def native_value(self):
-        d = self.coordinator.data or {}
-        r = (d.get("readings") or {}).get(self._key) or {}
-        return r.get("disposition")
+        r = self._reading()
+        disposition = r.get("disposition")
+        if disposition != DISP_OK:
+            return disposition
+        integrity = r.get("integrity")
+        if integrity and integrity != INTEGRITY_OK:
+            return integrity
+        return disposition
 
     @property
     def extra_state_attributes(self):
-        d = self.coordinator.data or {}
-        r = (d.get("readings") or {}).get(self._key) or {}
+        r = self._reading()
         return {
             "entity_id": r.get("entity_id"),
             "axis": r.get("axis"),
             "severity": r.get("severity"),
             "raw_state": r.get("raw_state"),
-            "detail": r.get("detail"),
+            # BOTH, ALWAYS, and never collapsed into the state alone:
+            # `disposition` is whether the read worked, `integrity` is
+            # what the source said. Reading one off the other is the
+            # confusion this ticket was.
+            "disposition": r.get("disposition"),
+            "integrity": r.get("integrity"),
+            # The three registry-resolved integrity rows (live_page,
+            # config_entries, notify_health) write `integrity_detail` and
+            # never `detail` — only the `fls` kind mirrors one onto the
+            # other. Reading `detail` alone is why those three published a
+            # bare `ok` with no text at all while the roll-up had their
+            # reason in hand.
+            "detail": r.get("detail") or r.get("integrity_detail"),
+            # Which ATTRIBUTE TRIPLE this row reads, when it reads one.
+            # Two integrity rows deliberately share sensor.fls_device_status
+            # and are told apart only by their triple (const.py's SOURCES
+            # note); with just `entity_id` exposed they looked like one
+            # duplicated row, which is exactly how GH-565 was raised.
+            "source_attr": r.get("integrity_attr"),
         }

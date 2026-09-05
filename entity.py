@@ -28,6 +28,6 @@ class HouseholdStateEntity(CoordinatorEntity):
             name="Household State",
             manufacturer="the home network",
             model="Directive resolver",
-            sw_version="0.5.0",
+            sw_version="0.5.1",
             entry_type=None,
         )
