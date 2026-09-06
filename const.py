@@ -2,6 +2,15 @@
 
 household_state 0.2.0 — 2026-08-08 (as household_alert; renamed 0.5.0)
 
+0.8.0 — 2026-09-06, GH-623. TWO ROWS STOP PUBLISHING A COUNT WHERE THEY
+HOLD A NAME. The perimeter row named `sustained[0] + " +2 more"`, and the
+alarm row scored itself off Alarmo's `open_sensors` and then published the
+bare state — so a wall could say "something has been left open" while the
+reading in hand knew exactly which door. Both now carry every id they
+know, comma-joined; the surface does the humanising, because the raw name
+belongs on the entity for the next diagnosis (LAW 10). No severity, dwell
+or disposition moved.
+
 0.5.0 — 2026-08-22, Joel. Renamed household_alert -> household_state: the
 domain had stopped describing the scope once QUIET (a household activity
 modifier, not a threat) joined STAGE/DIRECTIVE/INTEGRITY. Same change adds

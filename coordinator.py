@@ -208,10 +208,28 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._warn_once(spec["key"], "")
 
         if spec["kind"] == "alarm":
-            base["severity"] = alarm_severity(
-                st.state, st.attributes.get("open_sensors")
-            )
+            open_sensors = st.attributes.get("open_sensors")
+            base["severity"] = alarm_severity(st.state, open_sensors)
             base["detail"] = "alarm " + str(st.state)
+            # THE SENSORS ALARMO ALREADY NAMED. `open_sensors` is what
+            # promotes this row to sev 6 in the first place (alarm_severity
+            # above reads the same value), and on `triggered` it is the zone
+            # that tripped -- so the row scored itself on a fact it then
+            # discarded, and the wall said "armed with something open" while
+            # holding the answer. GH-623, the same defect as the perimeter
+            # row above and fixed the same way.
+            #
+            # Alarmo publishes a dict keyed by entity_id; the list form is
+            # accepted too rather than asserted against, because being wrong
+            # about the shape here would cost the name and the severity is
+            # computed from the same value either way.
+            ids = []
+            if isinstance(open_sensors, dict):
+                ids = sorted(open_sensors)
+            elif isinstance(open_sensors, (list, tuple, set)):
+                ids = sorted(str(x) for x in open_sensors)
+            if ids:
+                base["detail"] += ", open: " + ", ".join(ids)
             base["disposition"] = DISP_OK
             return base
 
@@ -437,13 +455,24 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         base["blind"] = blind
 
         if sustained:
-            more = ""
-            if len(sustained) > 1:
-                more = " +" + str(len(sustained) - 1) + " more"
             base["disposition"] = DISP_OK
             base["severity"] = PERIMETER_SEV
+            # EVERY SUSTAINED MEMBER, NAMED. This used to publish
+            # `sustained[0] + " +2 more"`, which made the other openings
+            # unnameable at the render boundary no matter what the surface
+            # did with the string -- and the surface is where a household
+            # member reads it. Joel, 2026-09-06: "'something is left open'
+            # is silly. say which door is left open." GH-623.
+            #
+            # Comma-joined because an entity_id cannot contain a comma, so
+            # the value is incapable of tearing its own delimiter (LAW 4);
+            # the reader splits on it without an escape rule. Unbounded on
+            # purpose -- this string is the diagnostic record and the glass
+            # decides how many it has room to say, which is the render-
+            # boundary split the surface already applies to every other
+            # log-shaped detail on this axis.
             base["detail"] = (
-                sustained[0] + more + " open over " + str(PERIMETER_DWELL) + "s"
+                ", ".join(sustained) + " open over " + str(PERIMETER_DWELL) + "s"
             )
             self._warn_once(spec["key"], "")
             return base
