@@ -444,7 +444,13 @@ SOURCES = (
         # lowest-precedence finding in resolve_directive() — a shelter or
         # evacuate order always takes the instruction row from it.
         "key": "boil_water_directive",
-        "name": "Boil Water Advisory",
+        # DISTINCT FROM THE STAGE ROW'S NAME, and that is not cosmetic. Each
+        # row publishes a diagnostic entity whose id is a slug of `name`, so
+        # two rows sharing a name collide: the second takes `_2` and NEVER
+        # reclaims the id (TOOLS), leaving two entities with identical
+        # friendly names that no surface can tell apart. That is GH-565's
+        # defect exactly, and 0.7.0 shipped it here before this fix.
+        "name": "Boil Water Directive",
         "entity_id": "binary_sensor.ucw_boil_water_advisory_affects_home",
         "kind": "binary_hazard",
         "axis": AXIS_DIRECTIVE,
