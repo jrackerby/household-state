@@ -215,6 +215,28 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["disposition"] = DISP_OK
             return base
 
+        if spec["kind"] == "binary_hazard":
+            # A binary_sensor whose `on` IS the hazard. No scale to read.
+            #
+            # Deliberately strict about what counts as off: only the literal
+            # "off" resolves to severity 0. Anything else that reached here
+            # is a state this row does not understand, and guessing `clear`
+            # for it is the KAN-139 substitution in a new coat. (unavailable,
+            # unknown and missing were already handled above and never get
+            # this far.)
+            if st.state == "on":
+                base["severity"] = spec["severity_when_on"]
+                base["detail"] = spec["name"] + " in effect for this address"
+            elif st.state == "off":
+                base["severity"] = 0
+                base["detail"] = "no " + spec["name"].lower() + " for this address"
+            else:
+                base["disposition"] = DISP_UNPARSED
+                base["detail"] = "unrecognised binary state: " + str(st.state)
+                return base
+            base["disposition"] = DISP_OK
+            return base
+
         if spec["kind"] == "cap":
             # KAN-208. RAW PAIRS ONLY — the vocabulary map and the
             # suppression policy are in resolver.py, where they can be

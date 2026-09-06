@@ -303,6 +303,17 @@ PERIMETER_DWELL = 300  # seconds. §7: "5-min dwell"
 CONFIG_ENTRY_DWELL = 300  # seconds.
 PERIMETER_SEV = 2      # §7: "Perimeter Open, Sustained" -> sev 2
 
+# A boil-water advisory covering THIS service address. Top of the elevated
+# band (1-4), deliberately:
+#   - it is a household-wide do-not-drink instruction, so it outranks
+#     perimeter-open (2) in the tiebreak and gets NAMED as the driver;
+#   - it can never reach the critical band (5-7) on its own, which would
+#     equate "boil your water" with an intruder or a triggered alarm.
+# STAGE ONLY. It is NOT on the directive axis: DIRECTIVE's vocabulary is
+# secure/shelter/evacuate and none of them is "boil the water" -- inventing a
+# fourth word there is a ruling, not a config change (LAW 11, GH-583).
+BOIL_ADVISORY_SEV = 4
+
 # Domain -> the state that means "open". A domain absent from this map
 # is not part of the perimeter set even while carrying the label; that
 # is how the 8 Nest Protects, the Ting tracker, the two locks and alarmo
@@ -387,6 +398,25 @@ SOURCES = (
         "label": PERIMETER_LABEL,
         "dwell": PERIMETER_DWELL,
         "open_severity": PERIMETER_SEV,
+    },
+    {
+        # GH-583. The water utility's own boil-water advisory table, matched
+        # against this service address including house-number ranges, by
+        # packages/uc_water_alerts.yaml. A binary hazard, not a severity
+        # feed -- there is no scale to read, it either covers this house or
+        # it does not.
+        #
+        # ITS UNAVAILABLE IS LOAD-BEARING. That entity goes unavailable when
+        # the advisory table cannot be read OR when the feed goes stale,
+        # rather than answering `off`. This row therefore resolves to
+        # DISP_UNREACHABLE and severity None, never 0 -- KAN-139's rule,
+        # arriving here for free because the producer refuses to guess.
+        "key": "boil_water",
+        "name": "Boil Water Advisory",
+        "entity_id": "binary_sensor.ucw_boil_water_advisory_affects_home",
+        "kind": "binary_hazard",
+        "axis": AXIS_STAGE,
+        "severity_when_on": BOIL_ADVISORY_SEV,
     },
     {
         # The directive axis's only source, DELIBERATELY. Reads the SAME
