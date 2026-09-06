@@ -1,11 +1,16 @@
 """GH-583: a boil-water advisory covering this address moves STAGE.
 
-WHY STAGE AND NOT DIRECTIVE. DIRECTIVE's vocabulary is secure / shelter /
-evacuate, and none of them is "boil the water". Inventing a fourth word on
-that axis is a ruling, not a config change (LAW 11), so this lands on STAGE
-the way every other non-CAP source does -- awareness, named on the banner,
-with no new directive semantics. The `directive axis is untouched` case below
-pins that, because the tempting future edit is exactly the one LAW 11 forbids.
+BOTH AXES, one entity. The STAGE row elevates the house and names the driver;
+a SECOND row on the same entity produces the INSTRUCTION, because "boil your
+water" is a thing to do and the directive axis is where things to do live.
+Two rows sharing an entity is §7.3's existing shape (sensor.fls_device_status)
+rather than a duplicate.
+
+This suite originally asserted the directive axis had exactly ONE source,
+because the first cut shipped STAGE-only on the argument that adding a fourth
+directive word was a ruling. It was -- and Joel made it. That assertion is now
+inverted rather than deleted, so the file records the reversal instead of
+quietly agreeing with whatever the code currently does.
 
 THE LOAD-BEARING CASE IS `unavailable`. The producing entity goes unavailable
 when the advisory table cannot be read or the feed goes stale, rather than
@@ -95,8 +100,11 @@ CASES = [
     ("row reads the address-matched entity, not the system-wide one",
      lambda: ROW["entity_id"],
      "binary_sensor.ucw_boil_water_advisory_affects_home"),
-    ("directive axis is untouched — still exactly one source",
-     lambda: len([s for s in SOURCES if s["axis"] == "directive"]), 1),
+    ("directive axis now carries CAP plus this one hazard source",
+     lambda: len([s for s in SOURCES if s["axis"] == "directive"]), 2),
+    ("the hazard directive row names the same entity as the stage row",
+     lambda: next(s for s in SOURCES if s["key"] == "boil_water_directive")
+     ["entity_id"], ROW["entity_id"]),
 
     # ---- severity ---------------------------------------------------
     ("advisory on -> configured severity",
@@ -143,7 +151,7 @@ FAIL_CASES = [
      lambda: read("on")["severity"], 0),
     ("an active advisory must not reach the critical band",
      lambda: stage_for(read("on")["severity"]), "critical"),
-    ("this must not have been wired onto the directive axis",
+    ("the STAGE row must not have been moved onto the directive axis",
      lambda: ROW["axis"], "directive"),
     ("an unrecognised state must not resolve OK",
      lambda: read("maybe")["disposition"], DISP_OK),

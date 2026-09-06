@@ -159,6 +159,20 @@ DIRECTIVE_NULL = "none"
 DIRECTIVE_SECURE = "secure"
 DIRECTIVE_SHELTER = "shelter"
 DIRECTIVE_EVACUATE = "evacuate"
+
+# GH-583, RULED BY JOEL. A fourth directive word, and the first that is not a
+# movement instruction: secure/shelter/evacuate all say where the household
+# should BE, this one says what it must not DRINK. It was initially built as
+# STAGE-only awareness on the argument that the vocabulary had three words and
+# adding one was a ruling — which was true, and which Joel then made. The
+# household axis exists to tell people what to do; a boil-water advisory is
+# one of the most literal instructions this estate will ever carry, and
+# elevating a banner without saying "boil it" is half a surface.
+#
+# LOWEST PRECEDENCE, DELIBERATELY. It is checked after secure, so a tornado
+# or an evacuation order always wins the instruction row. Water you must boil
+# is not a reason to stay out of the closet.
+DIRECTIVE_BOIL_WATER = "boil_water"
 DIRECTIVE_UNKNOWN = "unknown"
 
 # §7.3 INTEGRITY axis. `unknown` outranks `degraded` — "I cannot tell
@@ -417,6 +431,25 @@ SOURCES = (
         "kind": "binary_hazard",
         "axis": AXIS_STAGE,
         "severity_when_on": BOIL_ADVISORY_SEV,
+    },
+    {
+        # THE SAME ENTITY ON A SECOND AXIS, which is the shape §7.3 already
+        # uses for sensor.fls_device_status rather than a duplicate: one
+        # fact the household needs stated two ways. The STAGE row above
+        # elevates the house and names the driver; this row produces the
+        # INSTRUCTION, because "boil your water" is a thing to do and the
+        # directive axis is where things to do live.
+        #
+        # It is the only directive source that is not CAP, and it is the
+        # lowest-precedence finding in resolve_directive() — a shelter or
+        # evacuate order always takes the instruction row from it.
+        "key": "boil_water_directive",
+        "name": "Boil Water Advisory",
+        "entity_id": "binary_sensor.ucw_boil_water_advisory_affects_home",
+        "kind": "binary_hazard",
+        "axis": AXIS_DIRECTIVE,
+        "severity_when_on": BOIL_ADVISORY_SEV,
+        "directive_when_on": DIRECTIVE_BOIL_WATER,
     },
     {
         # The directive axis's only source, DELIBERATELY. Reads the SAME

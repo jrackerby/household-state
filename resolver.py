@@ -40,6 +40,7 @@ from .const import (
     INTEGRITY_DEGRADED,
     INTEGRITY_OK,
     INTEGRITY_UNKNOWN,
+    DIRECTIVE_BOIL_WATER,
     STAGE_CRITICAL,
     STAGE_ELEVATED,
     STAGE_NORMAL,
@@ -104,17 +105,38 @@ def resolve_directive(rows):
     Absence of `response` never blocks an EVENT_MAP match — that
     classifier does not read `response` at all.
     """
-    if not rows:
-        return DIRECTIVE_UNKNOWN, "no_cap_source", None, []
-
-    healthy = [r for r in rows if r["disposition"] == DISP_OK]
-    if not healthy:
-        return DIRECTIVE_UNKNOWN, "cap_source_unreadable", None, []
+    # GH-583. The axis is no longer CAP-only, so split by kind before any
+    # early return. A `binary_hazard` row states its directive outright --
+    # there is no payload to classify, it either applies or it does not.
+    cap_rows = [r for r in rows if r.get("kind") != "binary_hazard"]
+    hazard_rows = [r for r in rows if r.get("kind") == "binary_hazard"]
 
     found = []
     suppressed = []
     absent = 0
-    for r in healthy:
+    unreadable = 0
+
+    for r in hazard_rows:
+        if r["disposition"] != DISP_OK:
+            # Same rule the CAP branch applies to a missing `response`: an
+            # unreadable hazard row means we cannot say there is NO
+            # directive. It never forces `unknown` on its own -- a finding
+            # we CAN see still wins below.
+            unreadable = unreadable + 1
+            continue
+        if (r.get("severity") or 0) > 0:
+            found.append((r["directive_when_on"], r["name"]))
+
+    if not cap_rows:
+        if not found:
+            return DIRECTIVE_UNKNOWN, "no_cap_source", None, []
+    else:
+        healthy_cap = [r for r in cap_rows if r["disposition"] == DISP_OK]
+        if not healthy_cap:
+            unreadable = unreadable + 1
+        cap_rows = healthy_cap
+
+    for r in cap_rows:
         for p in r.get("pairs") or []:
             resp = p.get("response")
             event = p.get("event")
@@ -155,7 +177,14 @@ def resolve_directive(rows):
     for d, e in found:
         if d == DIRECTIVE_SECURE:
             return DIRECTIVE_SECURE, "cap_response", e, suppressed
+    # LAST. A shelter or evacuate order always takes the instruction row
+    # from this; water you must boil is not a reason to leave the closet.
+    for d, e in found:
+        if d == DIRECTIVE_BOIL_WATER:
+            return DIRECTIVE_BOIL_WATER, "hazard_source", e, suppressed
 
+    if unreadable and not found:
+        return DIRECTIVE_UNKNOWN, "directive_source_unreadable", None, suppressed
     if absent:
         return (
             DIRECTIVE_UNKNOWN,
