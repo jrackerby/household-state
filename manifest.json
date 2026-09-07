@@ -9,7 +9,7 @@
   "documentation": "https://github.com/jrackerby/household-state",
   "integration_type": "service",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/jrackerby/HA/issues",
+  "issue_tracker": "https://github.com/jrackerby/household-state/issues",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.8.0"
