@@ -26,7 +26,7 @@ class HouseholdStateEntity(CoordinatorEntity):
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry_id)},
             name="Household State",
-            manufacturer="the home network",
+            manufacturer="Household State",
             model="Directive resolver",
             sw_version="0.5.1",
             entry_type=None,

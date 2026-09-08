@@ -1,6 +1,6 @@
 # Household State
 
-The resolver half of the estate's directive layer, plus the QUIET modifier
+The resolver half of a household directive layer, plus the QUIET modifier
 derived from sleep mode.
 
 It runs **beside** `sensor.home_threat_posture`, not instead of it. It writes
