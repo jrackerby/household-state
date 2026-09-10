@@ -76,7 +76,27 @@ CASES = [
                                          if not r.get("axis")], []),
     ("every row has a kind", lambda: [r["key"] for r in SOURCES
                                       if not r.get("kind")], []),
+    # GH-717, Joel's ruling. A pikiosk showing the wrong page is not a
+    # household integrity fault, and while `kiosk_live_page` held the axis
+    # `degraded` over one pi's DevTools port, the dashboard server -- the server
+    # feeding every screen in the house -- was hard down and reached this
+    # registry not at all. The row is gone and this pins it gone: it would
+    # otherwise be re-added by the next session that reads KAN-260 and sees
+    # a signal with no consumer.
+    ("the kiosk_live_page row stays removed",
+     lambda: [r["key"] for r in SOURCES
+              if r["key"] == "kiosk_live_page" or r["kind"] == "live_page"], []),
 ]
+
+# A registry that HAS the removed row, so the check above cannot pass
+# vacuously against a list that could never contain one.
+_READDED = list(SOURCES) + [{
+    "key": "kiosk_live_page",
+    "name": "Kiosk Live Page",
+    "entity_id": None,
+    "kind": "live_page",
+    "axis": "integrity",
+}]
 
 # The harness must catch a real duplicate, or it proves nothing.
 _DUPE_NAMES = NAMES + [NAMES[0]]
@@ -90,6 +110,9 @@ FAIL_CASES = [
     ("the boil rows must not be collapsed to one name",
      lambda: len({r["name"] for r in SOURCES
                   if r["key"].startswith("boil_water")}), 1),
+    ("a re-added kiosk_live_page row must be reported",
+     lambda: [r["key"] for r in _READDED
+              if r["key"] == "kiosk_live_page" or r["kind"] == "live_page"], []),
 ]
 
 

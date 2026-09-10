@@ -95,7 +95,7 @@ def test_both_facts_stay_separately_readable():
         {
             "disposition": DISP_OK,
             "integrity": INTEGRITY_DEGRADED,
-            "integrity_detail": "1 DevTools unreachable",
+            "integrity_detail": "Dashboard server the dashboard server: unreachable",
         }
     )
     a = s.extra_state_attributes
@@ -104,11 +104,11 @@ def test_both_facts_stay_separately_readable():
 
 
 def test_detail_falls_back_to_integrity_detail():
-    """The three registry-resolved integrity rows (live_page,
-    config_entries, notify_health) write `integrity_detail` and never
-    `detail`; only the `fls` kind mirrors one onto the other. Reading
-    `detail` alone is why those three published a bare state with no text
-    while the roll-up had their reason in hand."""
+    """The two registry-resolved integrity rows (config_entries,
+    notify_health) write `integrity_detail` and never `detail`; only the
+    `fls` kind mirrors one onto the other. Reading `detail` alone is why
+    those rows published a bare state with no text while the roll-up had
+    their reason in hand."""
     s = _sensor(
         {
             "disposition": DISP_OK,

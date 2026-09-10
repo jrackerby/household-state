@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Source-condition logging stays silent until HA reaches RUNNING. Every
     # source here is another integration's entity, and the registry restores
     # an entity row well before its owner publishes a state -- so the polls
-    # during boot see a house with no doors and no kiosks and said so, once
+    # during boot see a house with no doors and no sources, and said so, once
     # per membership change, for the length of the boot. The READINGS are
     # untouched; only the log is gated. See coordinator.async_arm_logging.
     entry.async_on_unload(async_at_started(hass, coordinator.async_arm_logging))

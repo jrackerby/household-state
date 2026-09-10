@@ -2,6 +2,19 @@
 
 household_state 0.2.0 — 2026-08-08 (as household_alert; renamed 0.5.0)
 
+0.9.0 — 2026-09-10, GH-717, Joel's ruling. THE INTEGRITY AXIS WAS
+INVERTED AND THIS IS THE HALF OF THE FIX THAT LIVES HERE. `kiosk_live_page`
+raised INTEGRITY when a pikiosk was on the wrong page; the dashboard server, the
+server feeding every screen in the house, could be hard down for hours and
+reach this registry not at all. The row is REMOVED, along with the
+`live_page` kind, `_read_live_page` and `_live_page_entity_ids`. kiosk_pi
+still publishes sensor.<host>_live_page and still dwells both facts -- the
+signal did not die, it stopped being a household integrity fault. The other
+half is packages/network_client_monitoring.yaml, which wires
+binary_sensor.the dashboard server_health into Critical Networking Device Health.
+tests/test_sources_unique.py pins the row gone so it is not re-added by a
+later reading of KAN-260. No other row, dwell or disposition moved.
+
 0.8.0 — 2026-09-06, GH-623. TWO ROWS STOP PUBLISHING A COUNT WHERE THEY
 HOLD A NAME. The perimeter row named `sustained[0] + " +2 more"`, and the
 alarm row scored itself off Alarmo's `open_sensors` and then published the
@@ -315,14 +328,12 @@ PERIMETER_DWELL = 300  # seconds. §7: "5-min dwell"
 # KAN-311 (GH #55). Same 300s this file already uses for PERIMETER_DWELL,
 # and fls_state.jinja's own dwell_seconds — this codebase's standing answer
 # to "how long before a restart-window blip counts as a real fault," not a
-# new number. Covers both new rows below: config_entries reads raw HA
+# new number. Covers config_entries, which reads raw HA
 # framework state with no upstream dwell of its own (unlike every other
 # INTEGRITY row, which reads an already-dwelled custom sensor), so without
 # this a setup_retry entry still resolving 90s into a restart would page
 # Joel before HA finished starting (TOOLS.md: "a core restart takes about a
-# minute"). kiosk_live_page needs no dwell of its own — kiosk_pi's
-# coordinator already dwells both facts it reads — but shares the
-# constant rather than defining a second unmotivated number next to it.
+# minute").
 CONFIG_ENTRY_DWELL = 300  # seconds.
 PERIMETER_SEV = 2      # §7: "Perimeter Open, Sustained" -> sev 2
 
@@ -601,28 +612,17 @@ SOURCES = (
     # every poll, DISCOVERED off the entity registry rather than a
     # hand-maintained host list, for the same reason the perimeter set is
     # never pinned.
+    #
+    # THERE WERE THREE. `kiosk_live_page` was REMOVED 2026-09-10 (GH-717,
+    # Joel's ruling): a pikiosk showing the wrong page is not a household
+    # integrity fault, and while that row held this axis `degraded` over
+    # one pi's DevTools port, the dashboard server — the server feeding every screen
+    # in the house — was hard down and contributed nothing at all. The
+    # inversion, not the row's own correctness, is what retired it; the
+    # signal still exists on kiosk_pi's own sensor.<host>_live_page
+    # entities and simply no longer reaches this axis. Do not re-add it
+    # here: a wall on the wrong page is kiosk_pi's finding to publish.
     # -----------------------------------------------------------------
-    {
-        # KAN-260's second signal. kiosk_pi's OWN coordinator already
-        # dwells both facts this reads — LIVE_PAGE_DIVERGE_DWELL for a
-        # persistent live-vs-persistent-tier disagreement,
-        # TRANSPORT_FAIL_DWELL for a DevTools read that keeps failing
-        # while ssh itself answers — and publishes the verdict as the
-        # `diverged` / `read_unreachable` booleans on every
-        # sensor.<host>_live_page entity. This row does not re-implement
-        # either dwell; re-thresholding kiosk_pi's raw streaks here would
-        # be the same config-key-through-two-accessors defect LAW 1
-        # already names for room-panel. TWO SIGNALS, NOT ONE FAULT, per
-        # the ticket: a diverged wall is showing something it was never
-        # sent, an unreachable one has DevTools not answering while the
-        # host is otherwise up — kept apart in the detail string so an
-        # operator does not have to guess which.
-        "key": "kiosk_live_page",
-        "name": "Kiosk Live Page",
-        "entity_id": None,
-        "kind": "live_page",
-        "axis": AXIS_INTEGRITY,
-    },
     {
         # KAN-285's general shape: a config entry can read `loaded` while
         # every entity it owns reads unavailable (the UPS, 2h25m,

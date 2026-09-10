@@ -7,9 +7,9 @@ touches core's event loop, its registries' real semantics, or a config entry.
 A stub keeps the test runnable in CI in seconds and keeps a green result
 attributable to this repo rather than to a core version bump.
 
-It proves nothing about core's real registry APIs. `_live_page_entity_ids` and
-`_perimeter_entity_ids` are both wrapped in RULE 1 guards precisely because
-those APIs can move under an upgrade, and no test here can see that happen.
+It proves nothing about core's real registry APIs. `_perimeter_entity_ids` is
+wrapped in a RULE 1 guard precisely because those APIs can move under an
+upgrade, and no test here can see that happen.
 """
 
 from __future__ import annotations

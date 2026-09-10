@@ -201,10 +201,10 @@ class SourceSensor(_Base):
             # confusion this ticket was.
             "disposition": r.get("disposition"),
             "integrity": r.get("integrity"),
-            # The three registry-resolved integrity rows (live_page,
-            # config_entries, notify_health) write `integrity_detail` and
+            # The two registry-resolved integrity rows (config_entries,
+            # notify_health) write `integrity_detail` and
             # never `detail` — only the `fls` kind mirrors one onto the
-            # other. Reading `detail` alone is why those three published a
+            # other. Reading `detail` alone is why those rows published a
             # bare `ok` with no text at all while the roll-up had their
             # reason in hand.
             "detail": r.get("detail") or r.get("integrity_detail"),

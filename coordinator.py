@@ -102,8 +102,8 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         Until HA reaches RUNNING, every source this integration reads is
         expected to be blind: the registry restores an entity row long
         before the integration that owns it has published a state, so the
-        first polls see `st is None` for kiosk sensors and perimeter
-        contacts that are merely still starting. Logging that is noise
+        first polls see `st is None` for perimeter contacts and source
+        sensors that are merely still starting. Logging that is noise
         about HA's boot, not about the estate.
 
         Only the LOGGING is gated. The readings themselves are unchanged
@@ -126,8 +126,8 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         TWO ARGUMENTS, NOT ONE, AND THIS IS THE FIX. `state` is a stable
         condition token and is the ONLY thing compared; `detail` is the
         human sentence and is never compared. Deduping on the message
-        itself is not deduping: the perimeter and live_page messages carry
-        a count and a member list, so "4 unreadable" and "1 unreadable"
+        itself is not deduping: the perimeter message carries a count and
+        a member list, so "4 unreadable" and "1 unreadable"
         were different strings and each re-fired a warning while the
         condition never changed. The live count belongs on the entity,
         which is where a dashboard reads it, not in a repeated log line.
@@ -176,9 +176,6 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             # The one row with no entity_id. Dispatched before the state
             # lookup, because there is nothing to look up.
             return self._read_perimeter(spec, base)
-
-        if spec["kind"] == "live_page":
-            return self._read_live_page(spec, base)
 
         if spec["kind"] == "config_entries":
             return self._read_config_entries(spec, base)
@@ -498,121 +495,6 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         base["disposition"] = DISP_OK
         base["severity"] = 0
         base["detail"] = "all " + str(len(ents)) + " perimeter members closed"
-        self._warn_once(spec["key"], "")
-        return base
-
-    def _live_page_entity_ids(self):
-        """DISCOVER, DON'T PIN — kiosk_pi's live_page sensors, off the
-        registry. Matched on PLATFORM plus the unique_id TAIL, never on
-        entity_id or a host list: TOOLS.md already found one kiosk_pi
-        device carrying several id prefixes at once, so entity_id itself
-        cannot be trusted to end in `_live_page` in every case a bare
-        pattern match would assume.
-
-        Returns None only when the registry lookup itself fails (RULE 1
-        guards it the same way the perimeter label lookup is guarded); an
-        empty list is a real, distinct fact — no kiosk_pi hosts exist.
-        """
-        try:
-            ereg = er.async_get(self.hass)
-            return sorted(
-                e.entity_id
-                for e in ereg.entities.values()
-                if e.platform == "kiosk_pi" and (e.unique_id or "").endswith("_live_page")
-            )
-        except Exception as exc:  # noqa: BLE001 — RULE 1
-            self._warn_once(
-                "live_page_registry",
-                "registry_error",
-                "kiosk_pi live_page discovery failed: " + str(exc),
-            )
-            return None
-
-    def _read_live_page(self, spec, base):
-        """KAN-260 (GH #55). Aggregates every sensor.<host>_live_page.
-
-        Reads only the `diverged` / `read_unreachable` booleans kiosk_pi's
-        own coordinator already dwells (see sensor.py's KAN-311 comment on
-        the live_page description) — this function does no dwelling of its
-        own. TWO SIGNALS, NOT ONE FAULT: kept in separate lists so the
-        detail string never collapses "showing a stale page" into "DevTools
-        not answering," which are different problems with different fixes.
-
-        STATE `unknown` IS NOT BLIND HERE, unlike the perimeter row. This
-        sensor's own `state` is the live-page URL itself, which
-        sensor.py's docstring says is legitimately null the moment DevTools
-        cannot be read — that is exactly the `read_unreachable` case this
-        row exists to catch, carried in the ATTRIBUTES regardless of what
-        `state` holds. Routing every `unknown` state into blind first
-        found this live, on the very host it was supposed to catch:
-        kiosk05 read `read_unreachable: true` while its own state sat at
-        `unknown`, and the blind-first check silently swallowed the
-        finding. Only `st is None` or `state == unavailable` — the entity
-        itself gone, attributes cleared with it (RULE 1) — is really blind.
-        """
-        ent_ids = self._live_page_entity_ids()
-        if not ent_ids:
-            base["disposition"] = DISP_ABSENT
-            base["detail"] = "no kiosk_pi live_page entities discovered"
-            return base
-
-        blind = []
-        diverged = []
-        unreachable = []
-        for eid in ent_ids:
-            st = self.hass.states.get(eid)
-            if st is None or st.state == "unavailable":
-                blind.append(eid)
-                continue
-            attrs = st.attributes
-            if attrs.get("read") == "offline_expected":
-                continue
-            if attrs.get("diverged"):
-                diverged.append(eid)
-            if attrs.get("read_unreachable"):
-                unreachable.append(eid)
-
-        base["watched_count"] = len(ent_ids)
-        base["blind"] = blind
-
-        if diverged or unreachable:
-            parts = []
-            if diverged:
-                parts.append(
-                    str(len(diverged)) + " showing a stale page (" + diverged[0] + ")"
-                )
-            if unreachable:
-                parts.append(
-                    str(len(unreachable)) + " DevTools unreachable (" + unreachable[0] + ")"
-                )
-            base["disposition"] = DISP_OK
-            base["integrity"] = INTEGRITY_DEGRADED
-            base["integrity_detail"] = "; ".join(parts)
-            base["affected"] = len(set(diverged) | set(unreachable))
-            self._warn_once(spec["key"], "")
-            return base
-
-        if blind:
-            # No positive finding and incomplete visibility — unknown, not
-            # ok, same rule the perimeter row already applies.
-            base["disposition"] = DISP_UNKNOWN
-            base["detail"] = (
-                "cannot confirm live page health: "
-                + str(len(blind)) + " of " + str(len(ent_ids)) + " unreadable"
-            )
-            # Same token rule as the perimeter row above.
-            self._warn_once(
-                spec["key"],
-                "blind",
-                str(len(blind)) + " live_page sensor(s) unreadable: " + ", ".join(blind),
-            )
-            return base
-
-        base["disposition"] = DISP_OK
-        base["integrity"] = INTEGRITY_OK
-        base["integrity_detail"] = (
-            "all " + str(len(ent_ids)) + " kiosk live pages agree with kiosk.sh"
-        )
         self._warn_once(spec["key"], "")
         return base
 

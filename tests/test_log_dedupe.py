@@ -1,11 +1,19 @@
 """GH-491. What `_warn_once` compares, at what level, and when it is armed.
 
 THE REGRESSION THIS FILE EXISTS FOR. `_warn_once` used to compare the
-human-readable MESSAGE. The perimeter and live_page messages carry a count
-and a member list, so a shrinking blind set produced three different strings
-for one unchanged condition and re-fired a WARNING on each — live, that read
-as `4 live_page sensor(s) unreadable` / `2 ...` / `1 ...`, fifteen entries
-over ninety minutes, for a house that was simply finishing its boot.
+human-readable MESSAGE. A blind-set message carries a count and a member
+list, so a shrinking blind set produced three different strings for one
+unchanged condition and re-fired a WARNING on each — live, that read as
+`4 sensor(s) unreadable` / `2 ...` / `1 ...`, fifteen entries over ninety
+minutes, for a house that was simply finishing its boot.
+
+END-TO-END COVERAGE MOVED, NOT DELETED (GH-717). The reported sequence was
+originally replayed through `_read_live_page`, whose row left the INTEGRITY
+axis when a pikiosk on the wrong page stopped being a household integrity
+fault. `_read_perimeter` has the identical shape — a set resolved fresh off
+the registry every poll, a blind list, and a count in the message — so the
+replay moved there rather than going away with the row it happened to be
+written against.
 
 Cited standard: Home Assistant integration quality scale, `log-when-unavailable`
 (silver) — "log only once in total to avoid spamming the logs", at `info` level.
@@ -21,6 +29,7 @@ import ha_stubs
 from ha_stubs import (
     FakeEntityRegistry,
     FakeHass,
+    FakeLabelRegistry,
     FakeRegistryEntry,
     FakeState,
 )
@@ -51,9 +60,9 @@ def messages(caplog):
 def test_one_condition_logs_once_however_the_detail_moves(coord, caplog):
     """THE BUG. Same condition, three different details -> one line."""
     with caplog.at_level(logging.DEBUG, logger="household_state.coordinator"):
-        coord._warn_once("kiosk_live_page", "blind", "4 unreadable: a, b, c, d")
-        coord._warn_once("kiosk_live_page", "blind", "2 unreadable: b, d")
-        coord._warn_once("kiosk_live_page", "blind", "1 unreadable: b")
+        coord._warn_once("perimeter_open", "blind", "4 unreadable: a, b, c, d")
+        coord._warn_once("perimeter_open", "blind", "2 unreadable: b, d")
+        coord._warn_once("perimeter_open", "blind", "1 unreadable: b")
     assert len(caplog.records) == 1
     assert "4 unreadable" in messages(caplog)[0]
 
@@ -140,31 +149,36 @@ def test_a_defect_that_survives_the_boot_still_logs_once_armed(caplog):
 # ------------------------------------------- end to end, through a real read
 
 
-def _kiosk_hass(states):
+def _perimeter_hass(states):
+    """Four labelled perimeter contacts, exactly the shape the live estate
+    resolves off `fls_device` — a set discovered every poll, never pinned."""
     reg = FakeEntityRegistry(
-        FakeRegistryEntry(f"sensor.{h}_live_page", platform="kiosk_pi",
-                          unique_id=f"{h}_live_page")
-        for h in ("kiosk02", "kiosk04", "kiosk05", "kiosk07")
+        FakeRegistryEntry(f"binary_sensor.{d}_contact", labels=("fls_device",))
+        for d in ("back_door", "drop_zone", "front_door", "garage")
     )
-    return FakeHass(states=states, entity_registry=reg)
+    return FakeHass(
+        states=states,
+        entity_registry=reg,
+        label_registry=FakeLabelRegistry(("fls_device",)),
+    )
 
 
-LIVE_PAGE_SPEC = {
-    "key": "kiosk_live_page",
-    "name": "Kiosk Live Page",
+PERIMETER_SPEC = {
+    "key": "perimeter_open",
+    "name": "Perimeter Open, Sustained",
     "entity_id": None,
-    "kind": "live_page",
-    "axis": "integrity",
+    "kind": "perimeter",
+    "axis": "stage",
 }
 
 
 def _base():
     return {
-        "key": LIVE_PAGE_SPEC["key"],
-        "name": LIVE_PAGE_SPEC["name"],
+        "key": PERIMETER_SPEC["key"],
+        "name": PERIMETER_SPEC["name"],
         "entity_id": None,
-        "axis": LIVE_PAGE_SPEC["axis"],
-        "kind": LIVE_PAGE_SPEC["kind"],
+        "axis": PERIMETER_SPEC["axis"],
+        "kind": PERIMETER_SPEC["kind"],
         "severity": None,
         "raw_state": None,
         "detail": None,
@@ -172,23 +186,23 @@ def _base():
     }
 
 
-def test_the_live_kiosk_sequence_produces_exactly_one_line(caplog):
-    """Replays the reported sequence through _read_live_page itself: four
-    kiosk sensors with no state, then two recovering, then one more. One
-    condition throughout — one log line, and the live count stays where a
-    dashboard reads it, on the reading."""
-    hass = _kiosk_hass({})
+def test_the_live_boot_sequence_produces_exactly_one_line(caplog):
+    """Replays the reported sequence through _read_perimeter itself: four
+    contacts with no state, then two arriving, then one more. One condition
+    throughout — one log line, and the live count stays where a dashboard
+    reads it, on the reading."""
+    hass = _perimeter_hass({})
     c = HouseholdStateCoordinator(hass, 5)
     c.async_arm_logging()
 
-    ok = FakeState("http://x", diverged=False, read_unreachable=False)
+    closed = FakeState("off")
     with caplog.at_level(logging.DEBUG, logger="household_state.coordinator"):
-        r1 = c._read_live_page(LIVE_PAGE_SPEC, _base())
-        hass.states.set("sensor.kiosk02_live_page", ok)
-        hass.states.set("sensor.kiosk05_live_page", ok)
-        r2 = c._read_live_page(LIVE_PAGE_SPEC, _base())
-        hass.states.set("sensor.kiosk07_live_page", ok)
-        r3 = c._read_live_page(LIVE_PAGE_SPEC, _base())
+        r1 = c._read_perimeter(PERIMETER_SPEC, _base())
+        hass.states.set("binary_sensor.back_door_contact", closed)
+        hass.states.set("binary_sensor.front_door_contact", closed)
+        r2 = c._read_perimeter(PERIMETER_SPEC, _base())
+        hass.states.set("binary_sensor.garage_contact", closed)
+        r3 = c._read_perimeter(PERIMETER_SPEC, _base())
 
     assert len(caplog.records) == 1
     assert levels(caplog) == [logging.INFO]
@@ -198,16 +212,16 @@ def test_the_live_kiosk_sequence_produces_exactly_one_line(caplog):
     assert all(r["disposition"] == "unknown" for r in (r1, r2, r3))
 
 
-def test_the_kiosks_coming_back_logs_the_recovery(caplog):
-    hass = _kiosk_hass({})
+def test_the_contacts_coming_back_logs_the_recovery(caplog):
+    hass = _perimeter_hass({})
     c = HouseholdStateCoordinator(hass, 5)
     c.async_arm_logging()
-    ok = FakeState("http://x", diverged=False, read_unreachable=False)
+    closed = FakeState("off")
     with caplog.at_level(logging.DEBUG, logger="household_state.coordinator"):
-        c._read_live_page(LIVE_PAGE_SPEC, _base())
-        for h in ("kiosk02", "kiosk04", "kiosk05", "kiosk07"):
-            hass.states.set(f"sensor.{h}_live_page", ok)
-        reading = c._read_live_page(LIVE_PAGE_SPEC, _base())
+        c._read_perimeter(PERIMETER_SPEC, _base())
+        for d in ("back_door", "drop_zone", "front_door", "garage"):
+            hass.states.set(f"binary_sensor.{d}_contact", closed)
+        reading = c._read_perimeter(PERIMETER_SPEC, _base())
     assert len(caplog.records) == 2
     assert "recovered" in messages(caplog)[1]
-    assert reading["integrity"] == "ok"
+    assert reading["severity"] == 0
