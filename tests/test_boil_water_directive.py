@@ -1,6 +1,6 @@
-"""GH-583: `boil_water` is a directive, and it is the WEAKEST one.
+"""`boil_water` is a directive, and it is the WEAKEST one.
 
-Joel's ruling: elevating a banner without saying "boil it" is half a surface,
+Elevating a banner without saying "boil it" is half a surface,
 so the water advisory produces an instruction and not just a stage bump. That
 made `boil_water` the fourth word on an axis that had three, and the first one
 that is not about where the household should BE.
@@ -12,7 +12,7 @@ to leave the closet. Every combination below exists to pin that ordering, in
 both directions, because the failure is silent -- a wrong precedence renders a
 perfectly formatted instruction that is the wrong instruction.
 
-Self-test discipline (LAW 4): FAIL_CASES assert deliberately WRONG outcomes on
+Self-test discipline: FAIL_CASES assert deliberately WRONG outcomes on
 real inputs and main() proves each one fails before any PASS is trusted.
 """
 

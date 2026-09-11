@@ -38,7 +38,7 @@ class FakeHass(ha_stubs.FakeHass):
 
     It answers nothing — every source reads as missing — which is the right
     shape here: setup must succeed against an estate that cannot be read yet,
-    because on a real boot it is exactly that (LAW §15: the registry restores
+    because on a real boot it is exactly that (the registry restores
     an entity row long before its owner publishes a state).
     """
 
@@ -173,7 +173,7 @@ def test_unload_touches_no_module_global(setup):
 
 
 def test_the_assertions_can_fail(setup):
-    """LAW §4."""
+    """Self-test: this assertion set must be able to fail."""
     hass, entry, _ = setup
     # The unload result really is plumbed through, not hardcoded True.
     hass.config_entries.unload_result = True

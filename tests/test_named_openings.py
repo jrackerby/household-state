@@ -1,6 +1,6 @@
-"""GH-623: the row names WHICH door, not that a door exists.
+"""The row names WHICH door, not that a door exists.
 
-Joel, 2026-09-06, reading a wall: "'something is left open' is silly. say
+Read off a wall: "'something is left open' is silly. say
 which door is left open."
 
 He was reading `hazard.ts`'s wording, but the name was being dropped twice
@@ -20,10 +20,10 @@ generic. This suite pins that neither can regress to a count.
 WHAT IS DELIBERATELY NOT ASSERTED HERE: how the names are worded on glass.
 `Front Door Sensor` -> "Front Door" is a render-boundary rewrite and lives
 in ha-dashboard-kit's humanize.ts with its own tests, because the raw name
-has to stay on the entity for the next diagnosis (LAW 10). What this file
+has to stay on the entity for the next diagnosis. What this file
 owns is that the ids REACH the boundary at all.
 
-Self-test discipline (LAW 4): FAIL_CASES assert deliberately WRONG outcomes
+Self-test discipline: FAIL_CASES assert deliberately WRONG outcomes
 on real inputs, and main() proves every one fails before any PASS is
 trusted.
 """
@@ -56,7 +56,7 @@ from household_state.const import (  # noqa: E402
 )
 
 ALARM_ROW = next(s for s in SOURCES if s["key"] == "alarm")
-# GH #16: SOURCES ships no estate ids, so the suite names its own.
+# #16: SOURCES ships no estate ids, so the suite names its own.
 _ALARM_ENTITY = "alarm_control_panel.test_panel"
 PERIM_ROW = next(s for s in SOURCES if s["key"] == "perimeter_open")
 
@@ -108,10 +108,10 @@ def read_perimeter(members, sustained_ids):
     inst = C.__new__(C)
     inst.hass = _Hass(mapping)
     inst._warn_once = lambda *a, **k: None
-    # GH #16: _read_source resolves its entity through the binding map, so a
+    # #16: _read_source resolves its entity through the binding map, so a
     # hand-built instance carries one. Empty means "no override", which is
     # what every case here wants: the SOURCES row's own default.
-    # GH #16: entity and label are configuration now, so a hand-built
+    # #16: entity and label are configuration now, so a hand-built
     # instance must say what it binds or every row reports `unbound`.
     inst._bindings = {"perimeter.label": "fls_device"}
     inst._perimeter_entity_ids = lambda: list(members)
@@ -172,7 +172,7 @@ CASES = [
      FRONT + " open over " + str(PERIMETER_DWELL) + "s"),
     ("a sustained opening still scores the configured severity",
      lambda: read_perimeter([FRONT], {FRONT})["severity"], PERIMETER_SEV),
-    ("the ids are comma-joined, which no entity_id can contain (LAW 4)",
+    ("the ids are comma-joined, which no entity_id can contain",
      lambda: perim_detail([FRONT, GARAGE], {FRONT, GARAGE}).count(", "), 1),
     ("nothing sustained -> the all-closed detail, not a name",
      lambda: "open over" in perim_detail([FRONT, GARAGE], set()), False),
@@ -248,7 +248,7 @@ def main():
         return 1
 
     print("\n" + "=" * 70)
-    print("GH-623: the row names which door")
+    print("the row names which door")
     print("=" * 70)
     failed = []
     for case in CASES:

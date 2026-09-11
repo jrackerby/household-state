@@ -1,4 +1,4 @@
-"""household_state — the resolver half of the §11 directive layer, plus
+"""household_state — the resolver half of the household directive layer, plus
 the QUIET modifier from sleep mode.
 
 READ-ONLY: it writes nothing, calls no service, and touches no card. It
@@ -19,7 +19,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: HouseholdStateConfigEntry
 ) -> bool:
     scan = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
-    # GH #16. Every option that is not scan_interval is a source binding; the
+    # #16. Every option that is not scan_interval is a source binding; the
     # coordinator resolves each against the SOURCES row's own default. Passed
     # as a snapshot rather than the live entry so a read mid-poll cannot see
     # half of a reconfigure — the update listener reloads the entry, which

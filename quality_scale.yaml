@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/core/integration-quality-scale/
 #
-# TARGET: SILVER. LAW §15 makes the quality scale the build standard for every
+# TARGET: SILVER. The quality scale is the build standard for every
 # custom_components/* repo — Bronze the floor for anything shipped, Silver the
 # target for anything reading a device, a service, or another integration's
 # entities. This integration reads other integrations' entities as its ENTIRE
@@ -18,12 +18,12 @@
 #   2. tests/test_quality_scale.py is this file's gate: it asserts every rule is
 #      present exactly once, that each status is one hassfest accepts, and that
 #      every `exempt` carries the reason the schema requires. A gap-list nobody
-#      validates goes stale the first time a rule is added (LAW §10: make the
+#      validates goes stale the first time a rule is added (make the
 #      gate impossible to skip).
 #
-# A DEVIATION IS A RULING WITH A CITATION (LAW §15), never a silent exception.
+# A DEVIATION IS A RULING WITH A CITATION, never a silent exception.
 # The two below — entity-unavailable and test-before-setup — are both the same
-# ruling, LAW §11's never-raise contract, and are recorded there.
+# never-raise contract, stated in const.py's RULE 1.
 
 rules:
   # ------------------------------------------------------------------ Bronze
@@ -40,7 +40,7 @@ rules:
       DataUpdateCoordinator with update_interval from the entry's
       `scan_interval` option, DEFAULT_SCAN_INTERVAL=3s, bounded 1-300 by the
       options flow. Every source read is a state-machine read with no IO, so
-      the interval is set by the display requirement, not by a remote: GH-454
+      the interval is set by the display requirement, not by a remote service;
       pinned it at 3s to keep STAGE rise and fall latency under ten seconds on
       a tablet rendering the household's instruction row.
   brands:
@@ -103,7 +103,7 @@ rules:
       carries the trap that actually bites: HA never reclaims an entity id, so
       a reinstall lands `_2` suffixes while every dashboard and automation
       keeps pointing at ids that now belong to nothing. This integration
-      already carries one live scar of exactly that (GH-565). Also states what
+      already carries one live scar of exactly that. Also states what
       is NOT left behind, since it writes nothing outside its own ledger.
   docs-triggers:
     status: exempt
@@ -146,19 +146,19 @@ rules:
       may legitimately not exist yet at configure time, and a source that
       cannot be read is this integration's OUTPUT (published as `absent` /
       `unknown` on the entity attributes), never a setup failure. Refusing the
-      entry over one would be the KAN-139 collapse the component exists to
+      entry over one would be the dead-feed-reads-green collapse the component exists to
       refuse.
   test-before-setup:
     status: exempt
     comment: >-
-      DEVIATION, ruled in LAW §11 and cited in LAW §15. The coordinator NEVER
+      DEVIATION, and a deliberate one. The coordinator NEVER
       raises UpdateFailed, so async_config_entry_first_refresh has no failure
       path to convert into ConfigEntryNotReady, and every entity overrides
       `available` to True. That is deliberate: a monitor that disappears with
       its subject cannot report the subject down. The quality scale's own
       example raises on an unreachable device or service; a coordinator reading
       other entities has no service to lose, so the rule does not govern here
-      (LAW §15: apply a rule where it governs, not where it merely sounds
+      (apply a rule where it governs, not where it merely sounds
       relevant).
   unique-config-entry:
     status: done
@@ -194,8 +194,7 @@ rules:
   entity-unavailable:
     status: exempt
     comment: >-
-      DEVIATION, ruled in LAW §11 and cited in LAW §15 as this estate's worked
-      example. Every entity overrides `available` to True and an unreadable
+      DEVIATION, and a deliberate one. Every entity overrides `available` to True and an unreadable
       source surfaces as state `unknown` with a `disposition` attribute, never
       as the entity going away. Attributes on an unavailable entity vanish,
       which is precisely how a broken collector reads green — the defect this
@@ -207,7 +206,7 @@ rules:
   log-when-unavailable:
     status: done
     comment: >-
-      The half of the rule that governs here, adopted in GH-491. A source that
+      The half of the rule that governs here. A source that
       cannot be read logs once at the crossing and once on recovery, at INFO —
       it is the integration reporting its own subject, not an integration
       error. Deduped on a stable CONDITION token, never on the message: the

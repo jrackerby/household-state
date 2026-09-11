@@ -4,7 +4,7 @@
 answers "can I believe the stage sensor right now", and it is `on`
 (problem) whenever any source is unreadable — including when stage
 itself reads Normal. A layer that cannot see all its inputs and says
-Normal anyway is KAN-139.
+Normal anyway is the dead-feed-reads-green defect.
 """
 
 from __future__ import annotations
@@ -59,10 +59,10 @@ class FeedHealth(HouseholdStateEntity, BinarySensorEntity):
 
 
 class Quiet(HouseholdStateEntity, BinarySensorEntity):
-    """LAW §11's QUIET modifier — a read-only mirror of
+    """The QUIET modifier — a read-only mirror of
     input_boolean.sleep_mode, added 0.5.0.
 
-    READ-ONLY, DELIBERATELY (Joel, 2026-08-22). This entity does not
+    READ-ONLY, DELIBERATELY. This entity does not
     suppress or reroute anything on the STAGE/DIRECTIVE/INTEGRITY axes;
     it only gives a consumer one place to read the household's QUIET
     state instead of reaching into input_boolean.sleep_mode directly.
@@ -70,7 +70,7 @@ class Quiet(HouseholdStateEntity, BinarySensorEntity):
     of this entity's meaning.
 
     `is_on` is None, never False, when the source cannot be read — the
-    same KAN-139 shape as every other entity here: an unreadable source
+    same the dead-feed-reads-green defect shape as every other entity here: an unreadable source
     must not read as a real negative.
     """
 

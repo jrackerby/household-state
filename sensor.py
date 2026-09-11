@@ -2,7 +2,7 @@
 
 EVERY ENTITY HERE OVERRIDES `available` TO TRUE. A monitor that
 disappears when its subject does cannot report the subject being down —
-kiosk_pi's binary_sensor rule, and the reason attributes on an
+a standing binary_sensor rule, and the reason attributes on an
 unavailable entity vanishing is how a broken collector reads green.
 An unreadable source shows as state `unknown` with a disposition
 attribute, never as the entity going away.
@@ -93,7 +93,7 @@ class DirectiveSensor(_Base):
     def extra_state_attributes(self):
         d = self.coordinator.data or {}
         # `suppressed` is deliberately always present, not omitted when
-        # empty. §11.20 decision 4 declines a directive the feed DID
+        # empty. A ruling declines a directive the feed DID
         # offer, and the difference between "nothing applied" and "one
         # applied and we declined it" has to be readable here or the
         # policy is invisible at exactly the moment it matters.
@@ -122,9 +122,9 @@ class IntegritySensor(_Base):
     @property
     def extra_state_attributes(self):
         d = self.coordinator.data or {}
-        # NO `severity` KEY HERE, DELIBERATELY. §7.3 / RULE 4: a
+        # NO `severity` KEY HERE, DELIBERATELY. RULE 4: a
         # severity on this axis would be suppressed by Critical, which
-        # is the exact inversion §11.5 exists to remove. If a future
+        # is the exact inversion this component exists to remove. If a future
         # edit adds one, that edit is reintroducing the bug.
         return {
             "detail": d.get("integrity_detail"),
@@ -132,7 +132,7 @@ class IntegritySensor(_Base):
             "affected_count": d.get("integrity_affected"),
             "source_count": d.get("integrity_sources"),
             "since": d.get("integrity_since"),
-            # KAN-343: integrity-card.js's per-source breakdown, migrated
+            # The per-source breakdown a dashboard card reads, migrated
             # off the retired sensor.household_integrity. See resolver.py's
             # resolve() for the newline-joined label~state~detail format.
             # (Retained verbatim across the household_alert -> household_state
@@ -147,7 +147,7 @@ class SourceSensor(_Base):
     becomes visible instead of becoming a zero.
 
     THE STATE IS THE WORST THING KNOWN ABOUT THE SOURCE, NOT MERELY
-    WHETHER IT COULD BE READ (GH-562). It used to be `disposition` alone,
+    WHETHER IT COULD BE READ. It used to be `disposition` alone,
     and disposition answers a narrower question than the name on the
     entity suggests: `ok` there means "the read succeeded", never "the
     source is healthy". So a row that read cleanly and reported DEGRADED
@@ -155,8 +155,8 @@ class SourceSensor(_Base):
     sat at `ok` with `Spectrum: could not read WAN latency` in its own
     detail, underneath a roll-up correctly reporting it degraded.
 
-    That is LAW 11's `ok at zero` and `could not read` collapsing into
-    one value at exactly the layer built to keep them apart, and LAW 10's
+    That is `ok at zero` and `could not read` collapsing into one value
+    at exactly the layer built to keep them apart, and it is a
     monitor whose blind spot correlates with its own subject: any surface
     rendering per-source rows showed all-green under a degraded roll-up.
 
@@ -179,7 +179,7 @@ class SourceSensor(_Base):
         super().__init__(coordinator, entry_id)
         self._key = spec["key"]
         self._attr_name = spec["name"]
-        # GH #19: the PUBLISHED slug, which defaults to the key. Binding it is
+        # #19: the PUBLISHED slug, which defaults to the key. Binding it is
         # what lets a key be renamed upstream without minting a new entity and
         # orphaning the one this installation already publishes.
         self._attr_unique_id = entry_id + "_src_" + coordinator.slug_for(spec)
@@ -210,7 +210,7 @@ class SourceSensor(_Base):
             # BOTH, ALWAYS, and never collapsed into the state alone:
             # `disposition` is whether the read worked, `integrity` is
             # what the source said. Reading one off the other is the
-            # confusion this ticket was.
+            # confusion this component exists to prevent.
             "disposition": r.get("disposition"),
             "integrity": r.get("integrity"),
             # The two registry-resolved integrity rows (config_entries,
@@ -224,6 +224,6 @@ class SourceSensor(_Base):
             # Two integrity rows deliberately share sensor.fls_device_status
             # and are told apart only by their triple (const.py's SOURCES
             # note); with just `entity_id` exposed they looked like one
-            # duplicated row, which is exactly how GH-565 was raised.
+            # duplicated row, which is exactly how the indistinguishable-entity defect was raised.
             "source_attr": r.get("integrity_attr"),
         }

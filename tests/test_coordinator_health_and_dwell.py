@@ -1,6 +1,6 @@
 """The two integrity rows that read the framework, and RULE 3's fall dwell.
 
-The config-entry row (KAN-285) and the fall dwell (RULE 3) are the two places
+The config-entry row and the fall dwell (RULE 3) are the two places
 where the coordinator makes a judgement over TIME rather than over a single
 reading, so neither can be checked by inspection — and both were uncovered.
 """
@@ -61,7 +61,7 @@ def test_no_entries_is_vacuously_healthy():
 
 def test_a_disabled_entry_is_not_watched():
     """A disabled entry reads `not_loaded` with a null reason — it is not a
-    fault, it is a choice (TOOLS.md)."""
+    fault, it is a choice."""
     r = coordinator(entries=[
         FakeConfigEntry("e1", state="not_loaded", disabled_by="user")
     ])._read_source(CFG_SPEC)
@@ -145,8 +145,7 @@ def test_the_signal_names_no_integration_in_its_code():
     Its docstring names music_assistant, androidtv_remote and the UPS on
     purpose — those are the live findings the rule was derived FROM, and
     citing your evidence is not the same as hardcoding it. So this reads
-    string literals out of the AST rather than grepping the source (LAW §4:
-    assert on code forms, and strip comments first).
+    string literals out of the AST rather than grepping the source (assert on code forms, and strip comments first).
     """
     import ast
     import inspect
@@ -259,7 +258,7 @@ def test_a_fall_publishes_once_the_dwell_expires():
 
 
 def test_losing_sight_is_a_fall_not_a_clear():
-    """LAW §11: fall dwell, never rise dwell — and losing sight of a source
+    """fall dwell, never rise dwell — and losing sight of a source
     COUNTS AS A FALL. An escalation must not be cleared by going blind."""
     c = dwell_coordinator()
     c._apply_fall_dwell(7)
@@ -301,7 +300,7 @@ def test_the_raw_severity_is_kept_while_the_dwell_holds():
 
 
 def test_the_assertions_can_fail():
-    """LAW §4."""
+    """Self-test: this assertion set must be able to fail."""
     c = dwell_coordinator()
     # The dwell must actually hold, or every assertion above is trivially true.
     c._apply_fall_dwell(6)

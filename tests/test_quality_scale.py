@@ -7,11 +7,11 @@ key. Left ungated, the file is decoration: a rule added upstream silently goes
 unassessed, a typo'd status silently means nothing, and an `exempt` loses the
 reason that made it a ruling rather than a skip.
 
-This is that gate (LAW §10: make the gate impossible to skip).
+This is that gate (make the gate impossible to skip).
 
 ALL_RULES BELOW IS A SNAPSHOT, and is marked as one. It was read from
 `ALL_RULES` in home-assistant/core's script/hassfest/quality_scale.py on
-2026-09-11, per LAW §15 — never from the docs page, which names the tiers and
+2026-09-11 — never from the docs page, which names the tiers and
 not the rules. A second copy of an upstream list goes stale; the point here is
 not to track core, it is to make drift a DELIBERATE edit to this file rather
 than a rule quietly missing from the gap-list.
@@ -87,7 +87,7 @@ PLATINUM = ("async-dependency", "inject-websession", "strict-typing")
 
 ALL_RULES = BRONZE + SILVER + GOLD + PLATINUM
 
-# The target. LAW §15: Silver for anything reading a device, a service, or
+# The target. Silver for anything reading a device, a service, or
 # another integration's entities, which is this integration's entire input.
 TARGET_TIERS = BRONZE + SILVER
 
@@ -132,7 +132,7 @@ def test_status_is_one_hassfest_accepts(rules, rule):
 @pytest.mark.parametrize("rule", ALL_RULES)
 def test_exempt_carries_its_reason(rules, rule):
     """hassfest's SCHEMA REQUIRES a comment on exempt, and the reason is the
-    whole difference between a ruling and a skip (LAW §15)."""
+    whole difference between a ruling and a skip."""
     value = rules[rule]
     if _status(value) != "exempt":
         return
@@ -184,7 +184,7 @@ def test_a_declared_tier_is_backed_by_the_gap_list(rules):
 
 
 def test_bronze_is_the_floor_and_we_know_where_we_stand(rules):
-    """LAW §15: Bronze is the floor for anything shipped. This does not fail
+    """Bronze is the floor for anything shipped. This does not fail
     the build for being short of it — the gap-list's whole job is to say so
     honestly — but it does fail if the ANSWER goes missing, which is what
     happens when a rule is quietly dropped or restatused without a comment."""
@@ -197,7 +197,7 @@ def test_bronze_is_the_floor_and_we_know_where_we_stand(rules):
 
 
 def test_the_assertions_can_fail():
-    """A gate that cannot fail is not a gate (LAW §4)."""
+    """A gate that cannot fail is not a gate."""
     # An unassessed rule is caught.
     assert [r for r in ALL_RULES if r not in {"action-setup"}], "snapshot is empty"
     # A bad status is caught.

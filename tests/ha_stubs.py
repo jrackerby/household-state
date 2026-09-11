@@ -161,7 +161,7 @@ def install() -> None:
     uc.DataUpdateCoordinator = DataUpdateCoordinator
     uc.CoordinatorEntity = CoordinatorEntity
 
-    # Enough of the sensor platform to import sensor.py. GH-562 put real
+    # Enough of the sensor platform to import sensor.py. An earlier stub put real
     # behaviour in SourceSensor.native_value -- which of two facts about a
     # source its state reports -- and that is policy this repo owns, so it is
     # testable here for the same reason the log-dedupe policy is. None of it

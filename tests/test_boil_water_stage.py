@@ -1,14 +1,14 @@
-"""GH-583: a boil-water advisory covering this address moves STAGE.
+"""A boil-water advisory covering this service address moves STAGE.
 
 BOTH AXES, one entity. The STAGE row elevates the house and names the driver;
 a SECOND row on the same entity produces the INSTRUCTION, because "boil your
 water" is a thing to do and the directive axis is where things to do live.
-Two rows sharing an entity is §7.3's existing shape (sensor.fls_device_status)
+Two rows sharing an entity is the integrity axis's existing shape
 rather than a duplicate.
 
 This suite originally asserted the directive axis had exactly ONE source,
 because the first cut shipped STAGE-only on the argument that adding a fourth
-directive word was a ruling. It was -- and Joel made it. That assertion is now
+directive word was a ruling. It was, and the ruling was made. That assertion is now
 inverted rather than deleted, so the file records the reversal instead of
 quietly agreeing with whatever the code currently does.
 
@@ -16,10 +16,10 @@ THE LOAD-BEARING CASE IS `unavailable`. The producing entity goes unavailable
 when the advisory table cannot be read or the feed goes stale, rather than
 answering `off`. That must reach the resolver as severity None with a
 non-OK disposition -- never severity 0. Substituting 0 for "could not read"
-is KAN-139, and here it would mean a wall reading a calm house because the
+is the dead-feed-reads-green defect, and here it would mean a wall reading a calm house because the
 water utility's website was down.
 
-Self-test discipline (LAW 4): FAIL_CASES assert deliberately WRONG outcomes on
+Self-test discipline: FAIL_CASES assert deliberately WRONG outcomes on
 real inputs, and main() proves every one of them fails before any PASS below
 is trusted.
 """
@@ -28,7 +28,7 @@ import sys  # noqa: E402
 
 # conftest.py stages the repo as an importable `household_state` package, but
 # only pytest loads conftest. Replicate it when run directly, so this suite is
-# usable at a shell the way tools/test_*.py in jrackerby/HA are.
+# usable at a shell directly.
 if __name__ == "__main__" and "household_state" not in sys.modules:
     import atexit
     import shutil
@@ -62,7 +62,7 @@ from household_state.const import (  # noqa: E402
 from household_state.resolver import band_for, stage_for  # noqa: E402
 
 ROW = next(s for s in SOURCES if s["key"] == "boil_water")
-# GH #16: SOURCES ships no estate ids, so the suite names its own.
+# #16: SOURCES ships no estate ids, so the suite names its own.
 _BOIL_ENTITY = "binary_sensor.test_boil_water_advisory"
 
 
@@ -93,7 +93,7 @@ def read(state):
     inst = C.__new__(C)
     inst.hass = _Hass(mapping)
     inst._warn_once = lambda *a, **k: None
-    # GH #16: _read_source resolves its entity through the binding map, so a
+    # #16: _read_source resolves its entity through the binding map, so a
     # hand-built instance carries one. Empty means "no override", which is
     # what every case here wants: the SOURCES row's own default.
     inst._bindings = {ROW["key"] + ".entity_id": _BOIL_ENTITY}
@@ -113,7 +113,7 @@ def C_read_unbound():
 
 def both_axes_read_one_entity():
     """Bind the stage row and the directive row to the SAME entity and confirm
-    each reads it — the arrangement GH-583 built, expressed as behaviour now
+    each reads it — that arrangement, expressed as behaviour now
     that it is no longer expressible as a shared literal."""
     from household_state.coordinator import HouseholdStateCoordinator as C
 
@@ -134,7 +134,7 @@ CASES = [
     # ---- wiring -----------------------------------------------------
     ("row is on the STAGE axis, not DIRECTIVE",
      lambda: ROW["axis"], AXIS_STAGE),
-    # GH #16: WHICH advisory entity this reads is a binding now, so the old
+    # #16: WHICH advisory entity this reads is a binding now, so the old
     # assertion (a literal id) has nothing left to compare. It is NOT dropped
     # and it is NOT weakened to None == None, which would pass over anything:
     # the requirement it encoded — bind the ADDRESS-MATCHED advisory, never

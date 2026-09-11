@@ -1,7 +1,7 @@
 """resolve() — the whole axis resolution, exercised directly.
 
-LAW §11 makes this function payable: the resolver imports nothing from
-homeassistant, so §11.18's conflict table can be run against it with no live
+That is what makes this function testable: the resolver imports nothing from
+homeassistant, so the conflict table can be run against it with no live
 state and no restart. "A resolver that can only be exercised by moving the
 real world is a resolver that never gets exercised" (resolver.py's own
 docstring).
@@ -91,7 +91,7 @@ def test_an_unhealthy_source_can_never_contribute_zero():
 
 
 def test_unknown_is_not_normal_and_never_clear():
-    """LAW §11: unknown is not Normal and never green."""
+    """unknown is not Normal and never green."""
     out = resolve([stage("alarm", None, disposition=DISP_ABSENT)])
     assert out["stage"] != STAGE_NORMAL
     assert out["band"] != BAND_CLEAR
@@ -143,7 +143,7 @@ def test_a_source_outside_tiebreak_is_not_scored():
 
 
 def test_nothing_is_named_at_zero():
-    """LAW §11: name nothing at zero. A driver at severity 0 is a name with no
+    """name nothing at zero. A driver at severity 0 is a name with no
     finding behind it."""
     out = resolve([stage("alarm", 0), stage("local_nws", 0)])
     assert out["driver"] is None
@@ -211,7 +211,7 @@ def test_a_degraded_row_moves_integrity():
 
 
 def test_unknown_outranks_degraded():
-    """§7.3: `unknown` is first-class and OUTRANKS `degraded`. A verdict
+    """On this axis `unknown` is first-class and OUTRANKS `degraded`. A verdict
     computed from a failed read is not a verdict."""
     out = resolve([
         integrity("fls", verdict=INTEGRITY_DEGRADED, detail="2 offline", affected=2),
@@ -237,7 +237,7 @@ def test_a_degraded_row_with_no_detail_still_says_something():
 
 
 def test_integrity_never_moves_stage():
-    """LAW §11, and the inversion GH-717 was raised over. INTEGRITY addresses
+    """The inversion this component was built to remove. INTEGRITY addresses
     the operator; STAGE addresses the household. They are different audiences,
     not different intensities."""
     clean = resolve([stage("alarm", 0)])
@@ -253,7 +253,7 @@ def test_integrity_never_moves_stage():
 
 def test_there_is_no_severity_key_on_the_integrity_axis():
     """RULE 4. A severity here would be suppressed by Critical, which is the
-    exact inversion LAW §11.5 exists to remove. If a future edit adds one,
+    exact inversion this component exists to remove. If a future edit adds one,
     that edit is reintroducing the bug."""
     out = resolve([integrity("fls", verdict=INTEGRITY_DEGRADED)])
     assert "integrity_severity" not in out
@@ -277,7 +277,7 @@ def test_every_integrity_row_appears_in_the_breakdown_not_just_the_driver():
 
 
 def test_a_detail_containing_the_internal_pipe_separator_survives_intact():
-    """LAW §4: a value joined into a delimited channel must not be able to
+    """a value joined into a delimited channel must not be able to
     contain the delimiter. `detail` bodies use " | " as their OWN part
     separator throughout this codebase, so a pipe-joined row separator would
     tear one multi-part detail into two rows."""
@@ -302,7 +302,7 @@ def test_an_ok_row_with_no_detail_reads_ok_and_a_non_ok_one_says_so():
 def test_the_stage_detail_is_not_overwritten_by_the_breakdown_loop():
     """Python has no block scoping, and a first draft of the breakdown used
     bare `detail`/`state`, so the STAGE sensor's own detail came back reading
-    the last integrity row's text. Caught live (LAW §9), not by inspection."""
+    the last integrity row's text. Caught live, not by inspection."""
     out = resolve([
         stage("alarm", 0),
         integrity("net", verdict=INTEGRITY_DEGRADED, detail="Spectrum down",
@@ -356,7 +356,7 @@ def test_states_that_do_not_escalate(state):
 # ================================================================ self-test
 
 def test_the_assertions_can_fail():
-    """LAW §4: every assertion set needs a self-test proving it CAN fail."""
+    """every assertion set needs a self-test proving it CAN fail."""
     # RULE 2 must actually depend on the unhealthy row being there.
     assert resolve([stage("alarm", 0)])["severity"] == 0
     assert resolve([

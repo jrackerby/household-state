@@ -1,4 +1,4 @@
-"""GH-491. What `_warn_once` compares, at what level, and when it is armed.
+"""What `_warn_once` compares, at what level, and when it is armed.
 
 THE REGRESSION THIS FILE EXISTS FOR. `_warn_once` used to compare the
 human-readable MESSAGE. A blind-set message carries a count and a member
@@ -7,9 +7,9 @@ unchanged condition and re-fired a WARNING on each — live, that read as
 `4 sensor(s) unreadable` / `2 ...` / `1 ...`, fifteen entries over ninety
 minutes, for a house that was simply finishing its boot.
 
-END-TO-END COVERAGE MOVED, NOT DELETED (GH-717). The reported sequence was
+END-TO-END COVERAGE MOVED, NOT DELETED. The reported sequence was
 originally replayed through `_read_live_page`, whose row left the INTEGRITY
-axis when a pikiosk on the wrong page stopped being a household integrity
+axis when a wall panel on the wrong page stopped being a household integrity
 fault. `_read_perimeter` has the identical shape — a set resolved fresh off
 the registry every poll, a blind list, and a count in the message — so the
 replay moved there rather than going away with the row it happened to be
@@ -68,7 +68,7 @@ def test_one_condition_logs_once_however_the_detail_moves(coord, caplog):
 
 
 def test_the_harness_can_tell_the_difference(coord, caplog):
-    """SELF-TEST (LAW 4). The assertion above is only worth something if a
+    """SELF-TEST. The assertion above is only worth something if a
     genuine condition CHANGE still produces a second record. If this test
     ever passes with one record, the test above is passing vacuously."""
     with caplog.at_level(logging.DEBUG, logger="household_state.coordinator"):
@@ -163,9 +163,9 @@ def _perimeter_hass(states):
     )
 
 
-# GH #16: the perimeter label is configuration now. Bound here so these tests
+# #16: the perimeter label is configuration now. Bound here so these tests
 # exercise the condition they are about — a member that cannot be read — and
-# not `unbound`, which is a different condition and a WARNING (LAW §15).
+# not `unbound`, which is a different condition and a WARNING.
 _BINDINGS = {"perimeter.label": "fls_device"}
 
 PERIMETER_SPEC = {

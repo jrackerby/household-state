@@ -1,17 +1,17 @@
-"""Pure resolution of §11.3 — no Home Assistant imports, deliberately.
+"""Pure resolution of the three axes — no Home Assistant imports, deliberately.
 
 THIS FILE MUST STAY IMPORT-FREE OF `homeassistant.*`. That is what makes
-§11.18's obligation payable: the conflict table (fire + tornado, tornado
-+ intrusion, nap + severe weather, FLS offline + everything, evacuate +
-degraded, all inputs unavailable, every input fresh and idle) can be
-run against this function directly, with no live state and no restart.
+the conflict table runnable: fire + tornado, tornado + intrusion, nap +
+severe weather, FLS offline + everything, evacuate + degraded, all inputs
+unavailable, every input fresh and idle — each can be run against this
+function directly, with no live state and no restart.
 A resolver that can only be exercised by moving the real world is a
 resolver that never gets exercised.
 
 INPUT is a list of reading dicts, each:
     {key, name, axis, disposition, severity, raw_state, detail}
 `severity` is None whenever disposition is not `ok`. It is never 0 as a
-stand-in for "could not read" — that substitution is KAN-139.
+stand-in for "could not read" — that substitution is the dead-feed-reads-green defect.
 
 OUTPUT is a plain dict. The caller applies the fall dwell and the
 persisted ages; neither belongs here, because both need a clock and a
@@ -50,7 +50,7 @@ from .const import (
 
 
 def band_for(severity):
-    """§7 bands. 0 Clear / 1-4 Elevated / 5-7 Critical."""
+    """Stage bands. 0 Clear / 1-4 Elevated / 5-7 Critical."""
     if severity is None:
         return BAND_UNKNOWN
     if severity <= 0:
@@ -71,11 +71,11 @@ def stage_for(severity):
 
 
 def resolve_directive(rows):
-    """§11.9 mapped onto §11.3's precedence rules. KAN-208, extended KAN-336.
+    """The directive vocabulary mapped onto the precedence rules.
 
     Returns (directive, reason, driver, suppressed).
 
-    RULE 2 OF §11.3: EVACUATE IS EXCLUSIVE and is never reached by
+    EVACUATE IS EXCLUSIVE and is never reached by
     aggregation — it is only ever returned because one alert said
     `Evacuate` outright, whether by CAP's `response` or by DIRECTIVE_EVENT_MAP.
 
@@ -92,20 +92,20 @@ def resolve_directive(rows):
     wins. An event-name default must never be able to downgrade an
     alert-specific CAP signal.
 
-    §11.20 decision 4, extended KAN-336: an event in DIRECTIVE_EVENT_SUPPRESS
+    An event in DIRECTIVE_EVENT_SUPPRESS
     is declined regardless of which classifier would have promoted it, and
     the decline is RECORDED, never silent. `suppressed` is returned so the
     entity can say what it declined; "no directive applies" and "a directive
     applied and we declined it" must not collapse.
 
-    KAN-139 ON THIS AXIS TOO: an alert whose `response` field is missing
+    THE DEAD-FEED PROBLEM ON THIS AXIS TOO: an alert whose `response` field is missing
     means we cannot say there is no directive, so the answer is
     `unknown` — but only if nothing positive was found first. A Shelter
     we CAN see is not withheld because a second alert was unreadable.
     Absence of `response` never blocks an EVENT_MAP match — that
     classifier does not read `response` at all.
     """
-    # GH-583. The axis is no longer CAP-only, so split by kind before any
+    # The axis is no longer CAP-only, so split by kind before any
     # early return. A `binary_hazard` row states its directive outright --
     # there is no payload to classify, it either applies or it does not.
     cap_rows = [r for r in rows if r.get("kind") != "binary_hazard"]
@@ -225,7 +225,7 @@ def resolve(readings):
                 continue
             if top is None or sev > top:
                 top = sev
-                # GH #19: the PUBLISHED identity, not the internal key. A
+                # #19: the PUBLISHED identity, not the internal key. A
                 # surface reading `driver` matches it against the source
                 # entity it also renders, and those must agree.
                 driver = r.get("slug") or r["key"]
@@ -247,11 +247,11 @@ def resolve(readings):
             len(stage_rows)
         ) + " sources unreadable"
     elif severity == 0:
-        # KAN-210. Nothing is driving anything at Clear, but the loop
+        # Nothing is driving anything at Clear, but the loop
         # above will have named whichever key sits first in TIEBREAK,
         # purely because `top is None` on its first pass. A driver at
         # severity 0 is a name with no finding behind it. The worked
-        # example was the since-deleted comparison reference (LAW §3),
+        # example was the since-deleted comparison reference,
         # which read "alarm_control_panel.alarmo" whenever the house was
         # armed and idle. There is no driver at Clear.
         driver = None
@@ -268,7 +268,7 @@ def resolve(readings):
         confidence = "partial"
 
     # --- INTEGRITY ---------------------------------------------------
-    # §7.3: `unknown` is first-class and OUTRANKS `degraded`. There is
+    # On this axis `unknown` is first-class and OUTRANKS `degraded`. There is
     # no severity on this axis (RULE 4) and adding one is the bug.
     integ_state = INTEGRITY_OK
     integ_detail = "all monitoring paths healthy"
@@ -293,8 +293,8 @@ def resolve(readings):
         integ_detail = degraded_rows[0].get("integrity_detail") or "degraded"
         integ_affected = sum(int(r.get("affected") or 0) for r in degraded_rows)
 
-    # KAN-343: PER-SOURCE BREAKDOWN, for integrity-card.js parity with the
-    # retired packages/household_integrity.yaml `sources_detail` attribute.
+    # PER-SOURCE BREAKDOWN, for parity with the `sources_detail` attribute
+    # of the retired YAML template this replaced.
     # label~state~detail rows, same idiom that file used. Built across
     # EVERY integrity row, not just the first degraded one integ_detail
     # names above: the aggregate axis only ever needs ONE driver to decide
@@ -302,7 +302,7 @@ def resolve(readings):
     # all of them.
     #
     # ROWS ARE NEWLINE-JOINED, NOT PIPE-JOINED, AND THAT IS A DELIBERATE
-    # FIX, NOT A COSMETIC CHOICE (LAW 4: a value joined into a delimited
+    # FIX, NOT A COSMETIC CHOICE (a value joined into a delimited
     # channel must not be able to contain the delimiter). `detail` bodies
     # already use " | " as their OWN internal part-separator throughout
     # this codebase (detector_detail, lock_detail, sensor_detail, and this
@@ -321,7 +321,7 @@ def resolve(readings):
     # `detail`/`state` and the STAGE sensor's own `detail` attribute came
     # back live reading Critical Networking's text instead of "no active
     # local, state, weather, or perimeter threats" -- caught by reading the
-    # deployed entity back (LAW 9), not by this file's own hand-run
+    # deployed entity back, not by this file's own hand-run
     # self-test, which only exercised resolve() with integrity rows and
     # never noticed a STAGE row's output changing underneath it.
     integ_sources_detail_rows = []
@@ -369,7 +369,7 @@ def resolve(readings):
 
 
 def alarm_severity(state, open_sensors):
-    """§7 alarm ladder. Returns None for states that do not escalate."""
+    """The alarm ladder. Returns None for states that do not escalate."""
     if state == "triggered":
         from .const import ALARM_TRIGGERED_SEV
 

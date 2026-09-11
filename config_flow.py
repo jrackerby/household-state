@@ -34,11 +34,11 @@ class HouseholdStateConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class HouseholdStateOptionsFlow(config_entries.OptionsFlow):
-    """Poll interval, plus which entity supplies each source (GH #16).
+    """Poll interval, plus which entity supplies each source (#16).
 
     ONE STEP, DELIBERATELY. A multi-step options flow must merge every step
     over entry.options because async_create_entry(data=...) REPLACES them
-    wholesale — TOOLS.md records that trap, and it is invisible until a second
+    wholesale. That trap is invisible until a second
     step is added. A single step cannot hit it: what this form returns IS the
     complete option set. If this ever grows a second step, every step has to
     merge, and the test that pins the binding round-trip is the one that will

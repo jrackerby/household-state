@@ -108,7 +108,7 @@ Deleting the entry frees the ids in the UI but not in the registry, so a
 reinstall assigns `_2` suffixes — `sensor.household_state_stage_2` — and every
 dashboard, automation and template still points at the originals, which now
 belong to nothing. This integration already carries one live scar of exactly
-that (`sensor.household_state_boil_water_advisory_2`, GH-565).
+that: `sensor.household_state_boil_water_advisory_2`.
 
 So if you intend to reinstall, delete the old entity rows in *Settings →
 Devices & Services → Entities* — filter on `household_state`, including the

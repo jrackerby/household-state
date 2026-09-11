@@ -2,7 +2,7 @@
 
 binary_sensor.py was at 0% and sensor.py at 71% when this repo was gap-listed.
 These are the classes every surface in the estate actually reads, and the
-contract they hold is LAW §11's: an entity here NEVER goes unavailable, because
+contract they hold: an entity here NEVER goes unavailable, because
 attributes on an unavailable entity vanish and that is precisely how a broken
 collector reads green.
 """
@@ -37,7 +37,7 @@ class FakeCoordinator:
         self.data = data
 
     def slug_for(self, spec):
-        """GH #19: the published slug. Defaults to the key, which is what
+        """#19: the published slug. Defaults to the key, which is what
         every case here wants — nothing is rebound."""
         return spec["key"]
 
@@ -92,7 +92,7 @@ def test_every_unique_id_is_distinct_and_carries_the_entry():
 
 @pytest.mark.parametrize("data", [None, {}, {"stage": "critical"}])
 def test_no_entity_ever_goes_unavailable(data):
-    """LAW §11: the coordinator never raises, and every entity overrides
+    """the coordinator never raises, and every entity overrides
     `available` to true. A monitor that disappears with its subject cannot
     report the subject down."""
     for ent in _setup(setup_sensor, data) + _setup(setup_binary, data):
@@ -131,7 +131,7 @@ def test_the_stage_sensor_publishes_its_axis_and_dwell_state():
 
 
 def test_the_directive_sensor_always_publishes_suppressed():
-    """LAW §11: a declined signal is stated on the entity, always present. The
+    """a declined signal is stated on the entity, always present. The
     difference between "nothing applied" and "one applied and we declined it"
     has to be readable at exactly the moment it matters."""
     ent = DirectiveSensor(FakeCoordinator({"directive": "none"}), ENTRY_ID)
@@ -145,7 +145,7 @@ def test_the_directive_sensor_always_publishes_suppressed():
 
 
 def test_the_integrity_sensor_publishes_no_severity():
-    """RULE 4 / LAW §11.5. A severity on this axis would be suppressed by
+    """RULE 4. A severity on this axis would be suppressed by
     Critical, which is the inversion the contract exists to remove."""
     ent = IntegritySensor(
         FakeCoordinator({"integrity": "degraded", "integrity_detail": "2 offline"}),
@@ -172,7 +172,7 @@ def test_feed_health_is_a_problem_when_any_source_is_unreadable():
 
 
 def test_feed_health_is_a_problem_even_while_stage_reads_normal():
-    """KAN-139. A layer that cannot see all its inputs and says Normal anyway
+    """A layer that cannot see all its inputs and says Normal anyway
     is the defect this entity exists to make visible."""
     ent = FeedHealth(
         FakeCoordinator({"stage": "normal", "sources_unhealthy": ["ntas"]}),
@@ -203,7 +203,7 @@ def test_feed_health_is_not_tripped_by_a_merely_degraded_integrity():
 
 
 def test_feed_health_publishes_which_sources_not_merely_how_many():
-    """LAW §11: a directive names WHICH, never THAT."""
+    """a directive names WHICH, never THAT."""
     ent = FeedHealth(
         FakeCoordinator({"sources_unhealthy": ["ntas", "space_weather"],
                          "sources_total": 5, "sources_healthy": 3,
@@ -222,7 +222,7 @@ def test_quiet_mirrors_sleep_mode():
 
 
 def test_quiet_is_none_not_false_when_the_source_cannot_be_read():
-    """The same KAN-139 shape as everything else here: an unreadable source
+    """The same dead-feed shape as everything else here: an unreadable source
     must not read as a real negative."""
     ent = Quiet(FakeCoordinator({}), ENTRY_ID)
     assert ent.is_on is None
@@ -242,7 +242,7 @@ def test_quiet_names_the_entity_it_mirrors():
 
 
 def test_quiet_owns_no_device_class():
-    """LAW §11: QUIET owns no words on any surface. A device_class would give
+    """QUIET owns no words on any surface. A device_class would give
     it one — `problem` or `safety` both editorialise."""
     assert getattr(Quiet, "_attr_device_class", None) is None
 
@@ -255,7 +255,7 @@ def _source(reading, key="fls"):
 
 
 def test_a_source_row_reports_the_worse_of_the_two_facts():
-    """GH-562: `ok` on disposition means the READ succeeded, never that the
+    """`ok` on disposition means the READ succeeded, never that the
     source is healthy. A row that read cleanly and reported DEGRADED published
     `ok` underneath a roll-up correctly reporting it degraded."""
     ent = _source({"disposition": DISP_OK, "integrity": INTEGRITY_DEGRADED})
@@ -304,7 +304,7 @@ def test_source_rows_are_diagnostic():
 def test_the_source_attribute_triple_is_exposed():
     """Two integrity rows deliberately share one entity_id and are told apart
     only by their attribute triple; with just entity_id exposed they looked
-    like one duplicated row, which is how GH-565 was raised."""
+    like one duplicated row, which is how the indistinguishable-entity defect was raised."""
     ent = _source({"disposition": DISP_OK, "entity_id": "sensor.fls_device_status",
                    "integrity_attr": "detector_detail"})
     assert ent.extra_state_attributes["source_attr"] == "detector_detail"
@@ -320,7 +320,7 @@ def test_all_entities_share_one_device():
 
 
 def test_the_device_reports_the_shipped_version():
-    """GH #10: this read 0.5.1 for a 0.9.0 component."""
+    """#10: this read 0.5.1 for a 0.9.0 component."""
     import json
     import pathlib
 
@@ -338,7 +338,7 @@ def test_entity_names_slug_from_the_device():
 
 
 def test_the_assertions_can_fail():
-    """LAW §4."""
+    """Self-test: this assertion set must be able to fail."""
     # The availability override must be a real override, not the default.
     assert FeedHealth(FakeCoordinator(None), ENTRY_ID).available is True
     # is_on must actually depend on the data, or every assertion above is

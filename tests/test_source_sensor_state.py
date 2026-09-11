@@ -1,4 +1,4 @@
-"""SourceSensor reports the WORST thing known about a source (GH-562).
+"""SourceSensor reports the WORST thing known about a source.
 
 WHAT WENT WRONG, AND WHY NOTHING CAUGHT IT. Each registry row publishes a
 diagnostic entity whose state was `disposition` alone. `disposition` answers
@@ -9,8 +9,8 @@ sensor.household_state_critical_networking_device_health at `ok` while its own
 roll-up correctly reporting the axis degraded. Any surface rendering per-source
 rows showed all green under a degraded roll-up.
 
-That is LAW 11's "`ok at zero` and `could not read` are different values at the
-source" collapsing at exactly the layer built to keep them apart, and LAW 10's
+That is "`ok at zero` and `could not read` are different values at the
+source" collapsing at exactly the layer built to keep them apart, and it is a
 monitor whose blind spot correlates with its own subject.
 
 The roll-up was never wrong: resolve() reads `integrity` off the same readings
@@ -38,7 +38,7 @@ class _Coordinator:
         self.data = {"readings": {"row": reading}} if reading is not None else None
 
     def slug_for(self, spec):
-        """GH #19: the published slug. Defaults to the key, which is what every
+        """#19: the published slug. Defaults to the key, which is what every
         case here wants — nothing is rebound."""
         return spec["key"]
 
@@ -100,7 +100,7 @@ def test_both_facts_stay_separately_readable():
         {
             "disposition": DISP_OK,
             "integrity": INTEGRITY_DEGRADED,
-            "integrity_detail": "Dashboard server the dashboard server: unreachable",
+            "integrity_detail": "Dashboard server: unreachable",
         }
     )
     a = s.extra_state_attributes
@@ -138,7 +138,7 @@ def test_an_explicit_detail_is_not_overwritten_by_the_fallback():
 
 
 def test_the_source_attribute_is_exposed():
-    """GH-565. Two integrity rows deliberately share
+    """Two integrity rows deliberately share
     sensor.fls_device_status and differ only by which attribute triple they
     read. With `entity_id` alone on the entity they were indistinguishable
     on glass, which is how one was reported as measuring the other's
@@ -167,7 +167,7 @@ def test_the_source_attribute_is_exposed():
 # -- the suite can fail ---------------------------------------------------
 
 def test_the_assertions_can_fail():
-    """LAW 4: prove the check CAN go red. Reinstating the old behaviour --
+    """prove the check CAN go red. Reinstating the old behaviour --
     state is the disposition, full stop -- must break the degraded case and
     nothing else."""
     original = SourceSensor.native_value
@@ -181,7 +181,7 @@ def test_the_assertions_can_fail():
             {"disposition": DISP_OK, "integrity": INTEGRITY_DEGRADED}
         ).native_value
         assert regressed == DISP_OK, (
-            "SELF-TEST FAILED: the pre-GH-562 behaviour did not reproduce, so "
+            "SELF-TEST FAILED: the pre-fix behaviour did not reproduce, so "
             "this suite is not testing what it claims to"
         )
     finally:

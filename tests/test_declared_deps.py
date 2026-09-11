@@ -1,12 +1,12 @@
 """Every third-party import in the suite is declared in tests/requirements.txt.
 
-LAW §15: extracting a component exposes its suite's undeclared dependencies,
+extracting a component exposes its suite's undeclared dependencies,
 and the first run on a CLEAN RUNNER is when it learns this. A suite that has
 only ever run inside a shared .venv imports whatever that venv happens to carry
 for other reasons — the declaration is missing and nothing says so while the
-code stays put. tempest_wx's `import yaml` is the worked example: green for
-months inside jrackerby/HA, red at COLLECTION on that repo's first CI run
-(GH-670), where it read as a broken test rather than as a missing declaration.
+code stays put. An `import yaml` is the worked example: green for
+months inside a monorepo, red at COLLECTION on this repo's first CI run,
+where it read as a broken test rather than as a missing declaration.
 
 The rule names the remedy and says it is cheap and static: every third-party
 import across the suite, by AST, against sys.stdlib_module_names, covered by
@@ -84,19 +84,19 @@ def test_every_third_party_import_is_declared():
     }
     assert not undeclared, (
         "imported by the suite but absent from tests/requirements.txt — this is "
-        f"GH-670's shape and it fails at COLLECTION on a clean runner: {undeclared}"
+        f"undeclared, and it fails at COLLECTION on a clean runner: {undeclared}"
     )
 
 
 def test_the_declared_set_is_not_empty():
     """A parse that silently yields nothing would pass the check above over a
-    suite it never read. A gate that could not run is not a pass (LAW §5)."""
+    suite it never read. A gate that could not run is not a pass."""
     assert _declared(), "tests/requirements.txt parsed to nothing"
     assert _imported(), "no imports found across the suite — the AST walk read nothing"
 
 
 def test_the_assertion_can_fail():
-    """LAW §4: every assertion set needs a self-test proving it CAN fail."""
+    """every assertion set needs a self-test proving it CAN fail."""
     declared = _declared()
     assert "pytest" in declared and "yaml" in declared, (
         "the two the suite actually imports are not both declared"

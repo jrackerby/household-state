@@ -185,7 +185,7 @@ def test_every_abort_reason_has_a_translation():
 
 
 def test_the_assertions_can_fail():
-    """LAW §4: a check that cannot go red is not a check."""
+    """a check that cannot go red is not a check."""
     import asyncio
 
     # The schema really does validate, rather than accepting anything.

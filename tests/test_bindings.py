@@ -1,4 +1,4 @@
-"""Which entity supplies a source is CONFIGURATION (GH #16).
+"""Which entity supplies a source is CONFIGURATION (#16).
 
 A SOURCES row says what a source MEANS — its axis, its kind, how severity is
 read. Which entity supplies it is an installation detail. Hardcoding that made
@@ -182,7 +182,7 @@ def test_the_options_flow_offers_every_binding_and_round_trips_it():
     """THE MERGE GUARD. The options flow is one step today, so what it returns
     IS the whole option set and it cannot drop anything. If it ever grows a
     second step, async_create_entry(data=...) replaces entry.options wholesale
-    (TOOLS.md) and a step that forgets to merge silently deletes every binding
+    and a step that forgets to merge silently deletes every binding
     another step owns. This is the test that goes red when that happens."""
     import asyncio
 
@@ -244,7 +244,7 @@ def test_bindings_reach_the_coordinator_from_the_entry():
 
 
 def test_the_assertions_can_fail():
-    """LAW §4."""
+    """Self-test: this assertion set must be able to fail."""
     spec = row("ntas")
     # The binding must actually be consulted, not merely stored.
     assert coordinator({})._spec_entity(spec) == spec.get("entity_id")
@@ -255,7 +255,7 @@ def test_the_assertions_can_fail():
     assert bind_key("a", "entity_id") != bind_key("b", "entity_id")
 
 
-# ============================================ the published slug (GH #19)
+# ============================================ the published slug (#19)
 
 def test_the_slug_defaults_to_the_key():
     c = coordinator({})
@@ -311,7 +311,7 @@ def test_every_row_can_have_its_slug_bound():
 
 
 def test_the_slug_assertions_can_fail():
-    """LAW §4."""
+    """Self-test: this assertion set must be able to fail."""
     spec = row("local_nws")
     assert coordinator({}).slug_for(spec) == "local_nws"
     assert coordinator({}, {bind_key("local_nws", "slug"): "x"}).slug_for(spec) == "x"

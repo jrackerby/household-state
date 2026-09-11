@@ -1,7 +1,7 @@
 name: validate
 
-# Every one of these repos shipped with no CI at all (GH-483): a change landed,
-# jrackerby/HA bumped the submodule pointer, and nothing between the edit and
+# This repo shipped with no CI at all: a change landed, a pointer moved, and
+# nothing between the edit and
 # the live estate ever validated the manifest.
 
 on:
@@ -40,7 +40,7 @@ jobs:
       # WHY THIS STAGING STEP EXISTS. home-assistant/actions/hassfest takes no
       # path input -- it runs the hassfest image against ${{ github.workspace }}
       # and scans custom_components/*. This repo keeps its integration at the
-      # ROOT (hacs.json content_in_root: true) because jrackerby/HA submodules
+      # ROOT (hacs.json content_in_root: true) because Home Assistant loads
       # it AS custom_components/${{ env.DOMAIN }}. Handed the repo as-is,
       # hassfest finds zero integrations. So build the HA layout here rather
       # than restructure the repo and break the submodule path.
@@ -78,10 +78,10 @@ jobs:
       # moving under it. The trade is stated in that file's docstring: it
       # proves nothing about core's real registry APIs, which is why both
       # registry lookups in the coordinator keep their RULE 1 guards.
-      # LAW §15: test dependencies are declared BESIDE the suite and CI installs
+      # Test dependencies are declared BESIDE the suite and CI installs
       # from that file. A list here is a second copy, stale on the next import
       # added, and its failure reads as a broken test rather than as a missing
-      # declaration (GH-670, tempest_wx's `import yaml`).
+      # declaration.
       - run: pip install -r tests/requirements.txt
 
       # cd, not `pytest tests/`: the repo root carries the integration's own
@@ -128,7 +128,7 @@ jobs:
       # Reporting it as VOID rather than green keeps the distinction that
       # matters -- the check did not run, so nothing was proven either way. It
       # starts running by itself the moment the repository is made public.
-      # jrackerby/HA#483 carries that decision.
+      # That is a deliberate decision, not an oversight.
       - name: VOID -- HACS validation cannot run against a private repository
         if: ${{ github.event.repository.private }}
         run: |
@@ -136,7 +136,7 @@ jobs:
           echo "HACS reads hacs.json and manifest.json from raw.githubusercontent.com with NO"
           echo "Authorization header, in CI and in a live install alike, so a private repository"
           echo "404s. This step is a VOID, not a pass: nothing about HACS compatibility was"
-          echo "verified here. See jrackerby/HA#483."
+          echo "verified here."
 
       - uses: hacs/action@main
         if: ${{ !github.event.repository.private }}
@@ -160,7 +160,7 @@ jobs:
           # core_integrations/household_state and
           # custom_integrations/household_state 404 (measured 2026-09-11) --
           # so the check still cannot pass, and un-ignoring it would only turn
-          # CI red. The submission needs this repo public: GH #1. Re-test this
+          # CI red. The submission needs this repo public: #1. Re-test this
           # ignore the day that lands; an ignored check that would pass is how
           # a gate stops being one.
           ignore: brands

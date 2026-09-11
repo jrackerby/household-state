@@ -49,8 +49,8 @@ _BAD_STATES = ("unavailable", "unknown", "none", "")
 # other token logs at INFO, per the quality scale's log-when-unavailable.
 _DEFECT_STATES = frozenset(
     {"missing", "label_absent", "label_empty", "unparsed", "registry_error",
-     # GH #16. An unbound source needs somebody to fill in the options form.
-     # LAW §15 splits log level on WHO ACTS: nobody waits this out, so it is a
+     # #16. An unbound source needs somebody to fill in the options form.
+     # Log level splits on WHO ACTS: nobody waits this out, so it is a
      # warning like every other condition that needs an edit — not the INFO
      # this integration uses when it is merely reporting on its own subject.
      "unbound"}
@@ -79,7 +79,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             name="household_state",
             update_interval=timedelta(seconds=scan_interval),
         )
-        # GH #16. Which entity supplies a source is CONFIGURATION; the SOURCES
+        # #16. Which entity supplies a source is CONFIGURATION; the SOURCES
         # row supplies the default. Resolved through _bound() at every read
         # rather than baked into the spec at setup, so a reconfigure reaches
         # the next poll without a reload having to rebuild the row.
@@ -101,7 +101,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         blank: an options flow hands back "" for a field the user cleared, and
         reading that as an entity id would turn a cleared field into a lookup
         for the entity named "", which reports `absent` and looks exactly like
-        a deleted entity. Those must not collapse (LAW §11).
+        a deleted entity. Those must not collapse.
         """
         value = self._bindings.get(bind_key(source_key, field))
         if value is None or (isinstance(value, str) and not value.strip()):
@@ -118,7 +118,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         Defaults to the key. Bindable because renaming a key would otherwise
         mint a new entity and orphan the one an installation already publishes
-        (GH #19) — HA never reclaims an id, so the rename would be visible on
+        (#19) — HA never reclaims an id, so the rename would be visible on
         every dashboard reading the old one.
         """
         return self._bound(spec["key"], SLUG_FIELD, spec["key"])
@@ -126,7 +126,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
     async def async_load_ages(self) -> None:
         """RULE 5. Must run BEFORE the first refresh, or every age
         clock restarts at zero on every HA restart — which under-reports
-        age, the direction that hides the problem (Playbook §15.3)."""
+        age, the direction that hides the problem."""
         data = await self._store.async_load()
         self._ages = data or {}
         self._ages_loaded = True
@@ -156,7 +156,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         Only the LOGGING is gated. The readings themselves are unchanged
         and still publish `absent` / `unknown` on the entity attributes
-        throughout startup — collapsing those into `ok` is KAN-139 and is
+        throughout startup — collapsing those into `ok` is the dead-feed-reads-green defect and is
         exactly what this integration exists to refuse.
         """
         self._log_armed = True
@@ -206,7 +206,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
     def _read_source(self, spec: dict) -> dict:
         """One source -> one reading. NEVER returns severity 0 for a
-        source it could not read. That substitution is KAN-139."""
+        source it could not read. That substitution is the dead-feed-reads-green defect."""
         eid = self._spec_entity(spec)
         base = {
             "key": spec["key"],
@@ -223,8 +223,8 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         if eid is None and spec["kind"] not in ("perimeter", "config_entries",
                                                 "notify_health"):
-            # GH #16. "You have not told me where to look" is a different fact
-            # from "the entity you named is gone" (LAW §11: absent and
+            # #16. "You have not told me where to look" is a different fact
+            # from "the entity you named is gone" (absent and
             # unreachable do not collapse, and neither do these). Both are
             # ABSENT on the axis — an unbound source must never read as a
             # quiet zero — but the detail and the log token differ, because
@@ -252,7 +252,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         st = self.hass.states.get(eid)
         if st is None:
-            # KAN-182 lives here: an entity that was never set up is a
+            # The never-set-up-source defect lives here: an entity never set up is a
             # different fact from an entity reporting all clear.
             self._warn_once(
                 spec["key"], "missing", eid + " does not exist (never set up?)"
@@ -280,7 +280,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             # above reads the same value), and on `triggered` it is the zone
             # that tripped -- so the row scored itself on a fact it then
             # discarded, and the wall said "armed with something open" while
-            # holding the answer. GH-623, the same defect as the perimeter
+            # holding the answer. The unnamed-opening defect, the same one as the perimeter
             # row above and fixed the same way.
             #
             # Alarmo publishes a dict keyed by entity_id; the list form is
@@ -303,7 +303,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             # Deliberately strict about what counts as off: only the literal
             # "off" resolves to severity 0. Anything else that reached here
             # is a state this row does not understand, and guessing `clear`
-            # for it is the KAN-139 substitution in a new coat. (unavailable,
+            # for it is the dead-feed-reads-green substitution in a new coat. (unavailable,
             # unknown and missing were already handled above and never get
             # this far.)
             if st.state == "on":
@@ -320,9 +320,9 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             return base
 
         if spec["kind"] == "cap":
-            # KAN-208. RAW PAIRS ONLY — the vocabulary map and the
+            # RAW PAIRS ONLY — the vocabulary map and the
             # suppression policy are in resolver.py, where they can be
-            # exercised without moving the real world (Playbook §16.1).
+            # exercised without moving the real world.
             pairs = st.attributes.get(spec["pairs_attr"])
             if pairs is None:
                 # The entity answered but the attribute is not there:
@@ -349,11 +349,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             return base
 
         if spec["kind"] == "fls":
-            # RULE 6 / §11.5 step 3b. Integrity axis only — the severity
+            # RULE 6. Integrity axis only — the severity
             # attribute on this entity is deliberately NOT read.
             #
-            # KAN-210: THE ATTRIBUTE TRIPLE COMES OFF THE REGISTRY ROW,
-            # not off a name hardcoded here. §7.3 has always specified
+            # THE ATTRIBUTE TRIPLE COMES OFF THE REGISTRY ROW, not off a
+            # name hardcoded here. The integrity axis has always specified
             # two sources on this entity — device liveness and perimeter
             # tamper — and 0.1.0 read tamper_integrity into a key that
             # nothing downstream consumed. A value read and dropped is
@@ -363,7 +363,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["integrity_detail"] = st.attributes.get(spec["detail_attr"])
             base["affected"] = st.attributes.get(spec["affected_attr"]) or 0
             base["detail"] = base["integrity_detail"]
-            # GH-565: CARRY WHICH ATTRIBUTE WAS READ, not just which
+            # CARRY WHICH ATTRIBUTE WAS READ, not just which
             # entity. Two rows deliberately share sensor.fls_device_status
             # and are distinguished only by their triple. With `entity_id`
             # alone on the reading, the two per-source entities were
@@ -379,7 +379,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         try:
             base["severity"] = int(raw)
         except (TypeError, ValueError):
-            # KAN-207's shape: the entity answered and the severity did
+            # The state-disagrees-with-severity shape: the entity answered and the severity did
             # not parse. That is NOT zero and it is NOT unavailable.
             base["disposition"] = DISP_UNPARSED
             base["detail"] = "severity did not parse: " + str(raw)
@@ -469,12 +469,12 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             return None
 
     def _read_perimeter(self, spec, base):
-        """§7's "Perimeter Open, Sustained" — sev 2 after a 5-minute dwell.
+        """"Perimeter Open, Sustained" — severity 2 after a 5-minute dwell.
 
-        THREE THINGS DIFFER FROM home_posture.yaml's version, ON PURPOSE.
+        THREE THINGS DIFFER FROM THE YAML THIS REPLACED, ON PURPOSE.
 
         1. THE DWELL IS MEASURED FROM A PERSISTED OPEN-SINCE, not from
-           `last_changed` (RULE 5, Playbook §15.3). HA resets
+           `last_changed` (RULE 5, Home Assistant's restored-entity behaviour). HA resets
            `last_changed` to restart time for every restored entity, so
            the template version cannot fire for five minutes after any
            restart and under-reports age — the direction that hides the
@@ -483,7 +483,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
            `unknown`, NOT CLOSED. The template's `is not none` guard
            fails permissive: a deleted contact reads as 'off', which is
            precisely how the front door and the drop zone went uncovered
-           for weeks after the Ring swap. KAN-139.
+           for weeks after a doorbell swap — the dead-feed-reads-green defect.
         3. A SUSTAINED OPEN STILL PUBLISHES sev 2 while other members
            are unreadable. A positive finding does not need complete
            visibility; only a negative one does.
@@ -547,11 +547,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             # `sustained[0] + " +2 more"`, which made the other openings
             # unnameable at the render boundary no matter what the surface
             # did with the string -- and the surface is where a household
-            # member reads it. Joel, 2026-09-06: "'something is left open'
-            # is silly. say which door is left open." GH-623.
+            # member reads it. Read off a wall: "'something is left open'
+            # is silly. say which door is left open." the unnamed-opening defect.
             #
             # Comma-joined because an entity_id cannot contain a comma, so
-            # the value is incapable of tearing its own delimiter (LAW 4);
+            # the value is incapable of tearing its own delimiter;
             # the reader splits on it without an escape rule. Unbounded on
             # purpose -- this string is the diagnostic record and the glass
             # decides how many it has room to say, which is the render-
@@ -604,13 +604,12 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         return unavailable, total
 
     def _read_config_entries(self, spec, base):
-        """KAN-285 (GH #55). Two shapes, both generic across every domain:
+        """Two shapes, both generic across every domain:
 
-          setup_retry     HA already says so outright (music_assistant,
-                           androidtv_remote, both named live in the ticket).
+          setup_retry     HA already says so outright.
           loaded + dead    a config entry can read `loaded` while every
-                           entity it owns reads unavailable (the UPS,
-                           2h25m, found only by accident). total==0 is
+                           entity it owns reads unavailable (one live
+                           case ran 2h25m, found only by accident). total==0 is
                            excluded — see _entry_unavailable_ratio.
 
         THE SIGNAL KEYS ON THE SHAPE, NEVER ONE INTEGRATION: no domain is
@@ -618,7 +617,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         `bad` reading for 300s before it counts, because this row —
         unlike every other INTEGRITY row — reads raw framework state with
         no upstream dwell of its own, and a core restart's ~60-90s window
-        of entries still starting up would otherwise page Joel before HA
+        of entries still starting up would otherwise page an operator before HA
         finished booting.
         """
         try:
@@ -685,7 +684,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         return base
 
     def _read_notify_health(self, spec, base):
-        """KAN-309 (GH #55). Two facts, both cheap, both certain — see
+        """Two facts, both cheap, both certain — see
         const.py's SOURCES comment for why this stops short of a delivery
         heartbeat. `exists` is the only thing that ever moves `integrity`;
         `last_sent` rides along as an informational attribute the resolver

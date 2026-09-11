@@ -2,9 +2,9 @@
 
 This is the code that actually touches the estate, and it was the least
 covered file in the repo (44%) when this repo was gap-listed. Everything here
-serves one contract, RULE 1 / LAW §11: THIS COORDINATOR NEVER RAISES, and it
+serves one contract, RULE 1 / THIS COORDINATOR NEVER RAISES, and it
 NEVER returns severity 0 for a source it could not read. That substitution is
-KAN-139, and it is the whole reason the component exists.
+the dead-feed-reads-green defect, and it is the whole reason the component exists.
 
 The suite therefore spends most of its assertions on the difference between
 values that look alike and are not: `absent` vs `unreachable` vs `unknown` vs
@@ -25,7 +25,7 @@ from household_state.const import (
 )
 
 # The two names these tests bind to. Local to the suite on purpose: the point
-# of GH #16 is that the component ships with no estate ids of its own.
+# of #16 is that the component ships with no estate ids of its own.
 PERIMETER_LABEL_FOR_TESTS = "perimeter_test_label"
 QUIET_ENTITY_FOR_TESTS = "input_boolean.quiet_test"
 from household_state.coordinator import HouseholdStateCoordinator
@@ -39,7 +39,7 @@ from ha_stubs import (
 )
 
 
-# GH #16: SOURCES no longer carries this estate's entity ids, so a test that
+# #16: SOURCES no longer carries this estate's entity ids, so a test that
 # wants a row to READ something must say where. Binding explicitly is the
 # honest version of what these tests always meant — they used to inherit one
 # particular household's ids by accident of const.py.
@@ -75,7 +75,7 @@ def spec(**kw):
 # ===================================================== the read dispositions
 
 def test_an_entity_that_was_never_set_up_is_absent():
-    """KAN-182: an entity that was never set up is a different fact from an
+    """An entity that was never set up is a different fact from an
     entity reporting all clear."""
     r = coordinator({})._read_source(spec())
     assert r["disposition"] == DISP_ABSENT
@@ -83,7 +83,7 @@ def test_an_entity_that_was_never_set_up_is_absent():
 
 
 def test_unavailable_is_unreachable_not_absent():
-    """LAW §11: `absent` and `unreachable` do not collapse."""
+    """`absent` and `unreachable` do not collapse."""
     r = coordinator({"sensor.x": FakeState("unavailable")})._read_source(spec())
     assert r["disposition"] == DISP_UNREACHABLE
     assert r["severity"] is None
@@ -124,7 +124,7 @@ def test_the_state_stands_in_when_there_is_no_headline():
 
 @pytest.mark.parametrize("raw", ["banana", None, [], {}])
 def test_a_severity_that_does_not_parse_is_unparsed_not_zero(raw):
-    """KAN-207's shape: the entity answered and the severity did not parse.
+    """The entity answered and the severity did not parse.
     That is NOT zero and it is NOT unavailable."""
     r = coordinator({"sensor.x": FakeState("Elevated", severity=raw)})._read_source(spec())
     assert r["disposition"] == DISP_UNPARSED
@@ -152,7 +152,7 @@ def test_a_disarmed_panel_is_idle():
 
 
 def test_armed_with_something_open_names_the_sensors_it_scored_itself_on():
-    """GH-623. The row computed its severity from `open_sensors` and then
+    """The row computed its severity from `open_sensors` and then
     published a bare state, so the wall said "armed with something open" while
     the reading in hand knew the door."""
     r = _alarm("armed_away", {"binary_sensor.front_door": {}, "binary_sensor.patio": {}})
@@ -176,7 +176,7 @@ def test_the_names_are_sorted_so_the_detail_is_stable():
 
 
 def test_armed_and_closed_names_nothing():
-    """LAW §11: name nothing at zero."""
+    """name nothing at zero."""
     r = _alarm("armed_away", {})
     assert r["severity"] == 0
     assert "open:" not in r["detail"]
@@ -209,7 +209,7 @@ def test_a_binary_hazard_off_is_a_real_zero():
 
 def test_only_the_literal_off_counts_as_clear():
     """Guessing `clear` for a state this row does not understand is the
-    KAN-139 substitution in a new coat."""
+    the dead-feed-reads-green substitution in a new coat."""
     r = _hazard("Off")
     assert r["disposition"] == DISP_UNPARSED
     assert r["severity"] is None
@@ -264,7 +264,7 @@ def test_an_empty_cap_list_is_a_healthy_read():
 # ====================================================================== fls
 
 def test_the_fls_row_carries_which_attribute_it_read():
-    """GH-565: two rows deliberately share sensor.fls_device_status and are
+    """Two rows deliberately share sensor.fls_device_status and are
     distinguished only by their triple. With entity_id alone on the reading
     they were indistinguishable on glass."""
     r = coordinator({
@@ -377,7 +377,7 @@ def test_an_open_but_not_yet_sustained_member_does_not_escalate():
 
 
 def test_an_unreadable_member_makes_the_source_blind_rather_than_closed():
-    """KAN-139, and the reason the front door and the drop zone went uncovered
+    """The dead-feed defect, and the reason two openings went uncovered
     for weeks after the Ring swap: the template's `is not none` guard failed
     permissive, so a deleted contact read as 'off'."""
     ereg, lreg = _registry("binary_sensor.front_door", "binary_sensor.patio",
@@ -452,7 +452,7 @@ def test_the_axis_key_lists_partition_the_readings():
 
 
 def test_the_assertions_can_fail():
-    """LAW §4."""
+    """Self-test: this assertion set must be able to fail."""
     # The read really does depend on the state machine, not on a constant.
     assert coordinator({})._read_source(spec())["disposition"] == DISP_ABSENT
     assert coordinator({"sensor.x": FakeState("E", severity=1)}) \
@@ -476,7 +476,7 @@ class _Exploding:
 @pytest.mark.parametrize("broken", ["label_registry", "entity_registry",
                                     "services", "config_entries"])
 def test_no_framework_registry_can_take_the_update_down(broken):
-    """RULE 1 / LAW §11: the coordinator NEVER raises. A registry that moves
+    """RULE 1 / the coordinator NEVER raises. A registry that moves
     under a core upgrade must degrade one row, not take every entity
     unavailable and its attributes with it.
 
@@ -499,8 +499,7 @@ def test_a_degraded_registry_still_publishes_every_other_axis():
 
 
 def test_the_notify_row_reports_unreadable_rather_than_healthy_when_blind():
-    """`ok at zero` and `could not read` are different values at the source
-    (LAW §11). A registry that cannot be read must not publish a healthy
+    """`ok at zero` and `could not read` are different values at the source. A registry that cannot be read must not publish a healthy
     notify path."""
     c = coordinator({})
     c.hass.services = _Exploding()

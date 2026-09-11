@@ -3,21 +3,22 @@
 WHY NAME AND NOT JUST KEY. Each row publishes a diagnostic entity whose
 entity_id is a slug of `name`, not of `key`. Two rows sharing a name therefore
 collide in the registry: the second takes `_2` and NEVER reclaims the id
-(TOOLS.md), and both entities render with the identical friendly name, which
+and both entities render with the identical friendly name, which
 no surface can tell apart.
 
-That is GH-565's defect — "the two per-source entities were indistinguishable
-on glass and got reported as one row duplicated onto another's subject. The
-binding was correct; it was unreadable." 0.7.0 reintroduced it: the boil-water
+That is the indistinguishable-entity defect: two per-source entities that are
+indistinguishable on glass get reported as one row duplicated onto another's
+subject. The binding is correct; it is unreadable. This repo reintroduced it
+once: the boil-water
 STAGE row and the boil-water DIRECTIVE row were both named "Boil Water
 Advisory", and live HA produced sensor.household_state_boil_water_advisory
 alongside sensor.household_state_boil_water_advisory_2.
 
-Two rows may absolutely SHARE AN ENTITY -- that is §7.3's shape for
+Two rows may absolutely SHARE AN ENTITY -- that is the integrity axis's shape for
 sensor.fls_device_status and now for the boil-water sensor. What they may not
 share is the name they publish under. This suite pins the difference.
 
-Self-test discipline (LAW 4): FAIL_CASES assert deliberately WRONG outcomes
+Self-test discipline: FAIL_CASES assert deliberately WRONG outcomes
 and main() proves each fails before any PASS is trusted.
 """
 
@@ -76,12 +77,12 @@ CASES = [
                                          if not r.get("axis")], []),
     ("every row has a kind", lambda: [r["key"] for r in SOURCES
                                       if not r.get("kind")], []),
-    # GH-717, Joel's ruling. A pikiosk showing the wrong page is not a
+    # A wall panel showing the wrong page is not a
     # household integrity fault, and while `kiosk_live_page` held the axis
-    # `degraded` over one pi's DevTools port, the dashboard server -- the server
+    # `degraded` over one panel's DevTools port, while the server
     # feeding every screen in the house -- was hard down and reached this
     # registry not at all. The row is gone and this pins it gone: it would
-    # otherwise be re-added by the next session that reads KAN-260 and sees
+    # otherwise be re-added by the next reader who sees
     # a signal with no consumer.
     ("the kiosk_live_page row stays removed",
      lambda: [r["key"] for r in SOURCES

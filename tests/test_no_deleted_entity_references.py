@@ -1,11 +1,11 @@
 """Nothing shipped names an entity the estate has deleted.
 
-LAW §3 records the ruling: sensor.home_threat_posture is DELETED (Joel,
-GH-663), reversing its own FROZEN ruling — it was the comparison reference for
+sensor.home_threat_posture is DELETED, reversing an earlier decision to keep
+it frozen — it was the comparison reference for
 this integration, and that purpose was spent once 0.9.0 went live and its last
 consumer moved to sensor.household_state_stage. "Do not recreate it."
 
-GH #7 is what the absence of this check cost: SIX sites still described this
+#7 is what the absence of this check cost: SIX sites still described this
 integration by its relationship to that entity, for five releases. One of them
 was translations/en.json's config-flow description — rendered in the Home
 Assistant UI at the moment someone adds the integration, pointing an installer
@@ -28,7 +28,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # entity id -> the ruling that deleted it. Every shipped file is searched.
 DELETED_ENTITIES = {
-    "sensor.home_threat_posture": "LAW §3 (Joel, GH-663) — deleted; do not recreate",
+    "sensor.home_threat_posture": "deleted; do not recreate",
 }
 
 # Everything a user or a maintainer reads. Not tests/ — a test may legitimately
@@ -55,7 +55,7 @@ def _shipped_files():
 
 
 def test_every_shipped_file_exists():
-    """A gate that could not run is not a pass (LAW §5). A renamed or deleted
+    """A gate that could not run is not a pass. A renamed or deleted
     file would otherwise silently drop out of the sweep."""
     missing = [name for name, path in _shipped_files() if not path.is_file()]
     assert not missing, f"listed in SHIPPED but not on disk: {missing}"
@@ -72,7 +72,7 @@ def test_no_shipped_file_names_a_deleted_entity(entity_id, ruling):
 
 
 def test_the_assertion_can_fail():
-    """LAW §4: every assertion set needs a self-test proving it CAN fail."""
+    """every assertion set needs a self-test proving it CAN fail."""
     # The sweep must actually be reading file contents: this very repo's
     # README says what the integration publishes, so a search for a string
     # that IS present must find it.

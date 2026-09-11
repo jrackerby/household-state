@@ -1,4 +1,4 @@
-"""DeviceInfo, defined once (the kiosk_pi §16.1 convention)."""
+"""DeviceInfo, defined once."""
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -11,7 +11,7 @@ class HouseholdStateEntity(CoordinatorEntity):
 
     `_attr_has_entity_name = True` so ids slug from the device name:
     sensor.household_state_stage, not sensor.household_state_stage_stage.
-    This is the fix kiosk_pi applied to the 22 Glances ids that carried
+    This is the same fix applied elsewhere to entity ids that carried
     the IP address in the id itself.
     """
 
