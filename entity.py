@@ -3,7 +3,7 @@
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, VERSION
 
 
 class HouseholdStateEntity(CoordinatorEntity):
@@ -28,6 +28,6 @@ class HouseholdStateEntity(CoordinatorEntity):
             name="Household State",
             manufacturer="Household State",
             model="Directive resolver",
-            sw_version="0.5.1",
+            sw_version=VERSION,
             entry_type=None,
         )

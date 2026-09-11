@@ -125,8 +125,30 @@ WHAT THIS DELIBERATELY DOES NOT DO
     until EVACUATE has a verified input — gates the SURFACE, not this.
 """
 
+import json
+from pathlib import Path
+
 DOMAIN = "household_state"
 PLATFORMS = ["sensor", "binary_sensor"]
+
+
+def _manifest_version() -> str:
+    """The component's version, read from the ONE file that declares it.
+
+    GH #10: entity.py restated it as a literal and the device registry
+    published 0.5.1 through four releases, because release.yml cuts a release
+    on a manifest.json version CHANGE and nothing in that path touches a
+    second copy. A second copy of a version is a copy that goes stale on the
+    one action guaranteed not to update it.
+
+    Read at import, which HA performs in an executor thread when it loads the
+    component, so this is off the event loop.
+    """
+    manifest = Path(__file__).parent / "manifest.json"
+    return json.loads(manifest.read_text(encoding="utf-8"))["version"]
+
+
+VERSION = _manifest_version()
 
 # 0.5.0. QUIET's one source — see the module docstring for why it is a
 # read-only mirror and not a SOURCES row.
