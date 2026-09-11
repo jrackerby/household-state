@@ -106,6 +106,10 @@ def read_perimeter(members, sustained_ids):
     inst = C.__new__(C)
     inst.hass = _Hass(mapping)
     inst._warn_once = lambda *a, **k: None
+    # GH #16: _read_source resolves its entity through the binding map, so a
+    # hand-built instance carries one. Empty means "no override", which is
+    # what every case here wants: the SOURCES row's own default.
+    inst._bindings = {}
     inst._perimeter_entity_ids = lambda: list(members)
     inst._mark = lambda key, state: (
         old if key.split(":", 1)[1] in sustained_ids else fresh
@@ -133,6 +137,7 @@ def read_alarm(state, open_sensors):
         {ALARM_ROW["entity_id"]: _State(state, {"open_sensors": open_sensors})}
     )
     inst._warn_once = lambda *a, **k: None
+    inst._bindings = {}
     return C._read_source(inst, ALARM_ROW)
 
 

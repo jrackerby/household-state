@@ -89,6 +89,10 @@ def read(state):
     inst = C.__new__(C)
     inst.hass = _Hass(mapping)
     inst._warn_once = lambda *a, **k: None
+    # GH #16: _read_source resolves its entity through the binding map, so a
+    # hand-built instance carries one. Empty means "no override", which is
+    # what every case here wants: the SOURCES row's own default.
+    inst._bindings = {}
     return C._read_source(inst, ROW)
 
 

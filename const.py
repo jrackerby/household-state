@@ -358,6 +358,60 @@ CAP_ABSENT = "__absent__"
 # must not encode a guess about which one it is.
 # ---------------------------------------------------------------------
 PERIMETER_LABEL = "fls_device"
+
+# ------------------------------------------------------------------ BINDINGS
+#
+# WHICH ENTITIES THIS HOUSEHOLD READS IS CONFIGURATION, NOT SOURCE (GH #16).
+# A SOURCES row says what a source MEANS — its axis, its kind, how its severity
+# is read. Which entity supplies it is an installation detail, and hardcoding
+# that made this component readable by exactly one household: every id below
+# resolves to `absent` anywhere else, and `absent` is the state this component
+# exists to make loud.
+#
+# The shape of SOURCES is unchanged (LAW §11: one list, one row per source,
+# each with an axis). Only the IDENTITY moves — entity ids, the notify service,
+# the perimeter label. The attribute triples an `fls` row reads stay in the row
+# because they ARE the row's contract with its sensor, not an installation
+# choice; parameterising those is a separate question and is not in scope here.
+#
+# Each entry: the option key, the SOURCES key it binds (or a pseudo-key for the
+# two reads that are not SOURCES rows), the spec field it overrides, and the
+# selector domain the options flow offers.
+BIND_QUIET = "quiet"
+BIND_PERIMETER = "perimeter"
+
+BINDABLE = (
+    ("nws_union", "entity_id", "sensor", "Local NWS threat sensor"),
+    ("ntas", "entity_id", "sensor", "NTAS advisory level sensor"),
+    ("space_weather", "entity_id", "sensor", "Space weather sensor"),
+    ("alarm", "entity_id", "alarm_control_panel", "Alarm panel"),
+    ("boil_water", "entity_id", "binary_sensor", "Boil-water advisory (stage)"),
+    ("boil_water_directive", "entity_id", "binary_sensor",
+     "Boil-water advisory (directive)"),
+    ("nws_cap", "entity_id", "sensor", "CAP directive sensor"),
+    ("fire_life_safety", "entity_id", "sensor", "Fire/life-safety health sensor"),
+    ("security_device_health", "entity_id", "sensor", "Security health sensor"),
+    ("critical_networking_device_health", "entity_id", "sensor",
+     "Critical networking health sensor"),
+    ("notify_health", "last_sent_entity_id", "sensor",
+     "Notify last-successful-send sensor"),
+    (BIND_QUIET, "entity_id", "input_boolean", "Sleep-mode helper (QUIET)"),
+)
+
+# Not entity selectors: free text, because a service name and a label are not
+# entities and HA offers no selector that resolves them the same way.
+BINDABLE_TEXT = (
+    ("notify_health", "service_domain", "Notify service domain"),
+    ("notify_health", "service", "Notify service name"),
+    (BIND_PERIMETER, "label", "Perimeter label"),
+)
+
+
+def bind_key(source_key: str, field: str) -> str:
+    """The options key for one binding. Flat and stable: a nested structure
+    here would be one more thing an options flow has to merge correctly, and
+    TOOLS.md already records what that costs when a step gets it wrong."""
+    return source_key + "." + field
 PERIMETER_DWELL = 300  # seconds. §7: "5-min dwell"
 
 # KAN-311 (GH #55). Same 300s this file already uses for PERIMETER_DWELL,

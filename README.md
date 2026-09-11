@@ -33,6 +33,40 @@ severity is held for a dwell before it publishes (a rise never is). A poll
 interval longer than that dwell makes the dwell meaningless — the flap it
 exists to absorb lands between two polls and publishes as a real fall.
 
+### Which entities supply each source
+
+The rest of the options bind a source to an entity in *your* installation.
+A `SOURCES` row says what a source **means** — its axis, its kind, how its
+severity is read. Which entity supplies it is yours to say.
+
+| option | binds | domain |
+|---|---|---|
+| `nws_union.entity_id` | local NWS threat sensor (STAGE) | `sensor` |
+| `nws_cap.entity_id` | CAP directive sensor (DIRECTIVE) | `sensor` |
+| `ntas.entity_id` | NTAS advisory level | `sensor` |
+| `space_weather.entity_id` | space weather | `sensor` |
+| `alarm.entity_id` | alarm panel | `alarm_control_panel` |
+| `boil_water.entity_id` | boil-water advisory (STAGE) | `binary_sensor` |
+| `boil_water_directive.entity_id` | boil-water advisory (DIRECTIVE) | `binary_sensor` |
+| `fire_life_safety.entity_id` | fire/life-safety health | `sensor` |
+| `security_device_health.entity_id` | security health | `sensor` |
+| `critical_networking_device_health.entity_id` | networking health | `sensor` |
+| `notify_health.service_domain` | notify service domain | text |
+| `notify_health.service` | notify service name | text |
+| `notify_health.last_sent_entity_id` | last successful send | `sensor` |
+| `quiet.entity_id` | sleep-mode helper (QUIET) | `input_boolean` |
+| `perimeter.label` | label whose members are the perimeter | text |
+
+**Leaving one blank is not the same as pointing it at nothing.** A blank
+binding falls through to the row's own default; an id that does not resolve
+reports `absent`, loudly, because a source this layer cannot read must never
+read as a quiet zero.
+
+Two rows may share one entity on purpose — `nws_union` and `nws_cap` read the
+same threat sensor on different axes, as do the two boil-water rows, and the
+fire/life-safety and security rows are told apart only by which attribute
+triple they read. Bind them independently.
+
 ## One rule worth not breaking
 
 Entity ages load **before** the first refresh. Skip that and every age clock

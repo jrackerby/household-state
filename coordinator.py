@@ -14,6 +14,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     AXIS_DIRECTIVE,
+    BIND_PERIMETER,
+    BIND_QUIET,
     AXIS_INTEGRITY,
     AXIS_STAGE,
     CONFIG_ENTRY_DWELL,
@@ -32,6 +34,7 @@ from .const import (
     QUIET_SOURCE_ENTITY,
     SOURCES,
     STORE_KEY,
+    bind_key,
     STORE_VERSION,
 )
 from .resolver import alarm_severity, resolve
@@ -58,13 +61,23 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
     broken collector comes to read green.
     """
 
-    def __init__(self, hass: HomeAssistant, scan_interval: int) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        scan_interval: int,
+        bindings: dict | None = None,
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name="household_state",
             update_interval=timedelta(seconds=scan_interval),
         )
+        # GH #16. Which entity supplies a source is CONFIGURATION; the SOURCES
+        # row supplies the default. Resolved through _bound() at every read
+        # rather than baked into the spec at setup, so a reconfigure reaches
+        # the next poll without a reload having to rebuild the row.
+        self._bindings = dict(bindings or {})
         self._store = Store(hass, STORE_VERSION, STORE_KEY)
         self._ages: dict = {}
         self._ages_loaded = False
@@ -74,6 +87,24 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._warned: dict = {}
         # Armed by async_at_started; see async_arm_logging.
         self._log_armed = False
+
+    def _bound(self, source_key: str, field: str, default=None):
+        """The configured value for one binding, or the row's own default.
+
+        An EMPTY configured value is treated as unset, not as a deliberate
+        blank: an options flow hands back "" for a field the user cleared, and
+        reading that as an entity id would turn a cleared field into a lookup
+        for the entity named "", which reports `absent` and looks exactly like
+        a deleted entity. Those must not collapse (LAW §11).
+        """
+        value = self._bindings.get(bind_key(source_key, field))
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return default
+        return value
+
+    def _spec_entity(self, spec: dict):
+        """The entity a SOURCES row reads, after binding."""
+        return self._bound(spec["key"], "entity_id", spec.get("entity_id"))
 
     async def async_load_ages(self) -> None:
         """RULE 5. Must run BEFORE the first refresh, or every age
@@ -159,7 +190,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
     def _read_source(self, spec: dict) -> dict:
         """One source -> one reading. NEVER returns severity 0 for a
         source it could not read. That substitution is KAN-139."""
-        eid = spec["entity_id"]
+        eid = self._spec_entity(spec)
         base = {
             "key": spec["key"],
             "name": spec["name"],
@@ -328,17 +359,18 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         other read in this file does: `quiet` is None, never False, when
         the source cannot be read, so an unreadable sleep_mode never
         silently claims the house is NOT quiet."""
-        st = self.hass.states.get(QUIET_SOURCE_ENTITY)
+        quiet_entity = self._bound(BIND_QUIET, "entity_id", QUIET_SOURCE_ENTITY)
+        st = self.hass.states.get(quiet_entity)
         base = {
             "quiet": None,
-            "quiet_source_entity_id": QUIET_SOURCE_ENTITY,
+            "quiet_source_entity_id": quiet_entity,
             "quiet_raw_state": None,
         }
         if st is None:
             self._warn_once(
                 "quiet",
                 "missing",
-                QUIET_SOURCE_ENTITY + " does not exist (never set up?)",
+                quiet_entity + " does not exist (never set up?)",
             )
             return base
         base["quiet_raw_state"] = st.state
@@ -346,12 +378,16 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             self._warn_once(
                 "quiet",
                 st.state or "empty",
-                QUIET_SOURCE_ENTITY + " is " + (st.state or "empty"),
+                quiet_entity + " is " + (st.state or "empty"),
             )
             return base
         self._warn_once("quiet", "")
         base["quiet"] = st.state == "on"
         return base
+
+    def _perimeter_label(self) -> str:
+        """The label whose members ARE the perimeter, after binding."""
+        return self._bound(BIND_PERIMETER, "label", PERIMETER_LABEL)
 
     def _perimeter_entity_ids(self):
         """DISCOVER, DON'T PIN — resolve the fls_device label at runtime.
@@ -367,10 +403,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         exact mechanism this integration exists to refuse.
         """
         try:
+            wanted = self._perimeter_label()
             lreg = lr.async_get(self.hass)
-            label = lreg.async_get_label(PERIMETER_LABEL)
+            label = lreg.async_get_label(wanted)
             if label is None:
-                label = lreg.async_get_label_by_name(PERIMETER_LABEL)
+                label = lreg.async_get_label_by_name(wanted)
             if label is None:
                 return None
             ereg = er.async_get(self.hass)
@@ -407,19 +444,20 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
            are unreadable. A positive finding does not need complete
            visibility; only a negative one does.
         """
+        label = self._perimeter_label()
         ents = self._perimeter_entity_ids()
         if ents is None:
             base["disposition"] = DISP_ABSENT
-            base["detail"] = "label " + PERIMETER_LABEL + " does not resolve"
+            base["detail"] = "label " + label + " does not resolve"
             self._warn_once(
                 spec["key"],
                 "label_absent",
-                "perimeter label " + PERIMETER_LABEL + " does not resolve",
+                "perimeter label " + label + " does not resolve",
             )
             return base
         if not ents:
             base["disposition"] = DISP_ABSENT
-            base["detail"] = "no contacts or covers carry label " + PERIMETER_LABEL
+            base["detail"] = "no contacts or covers carry label " + label
             self._warn_once(
                 spec["key"], "label_empty", "perimeter label resolves to zero members"
             )
@@ -610,10 +648,10 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         # their attributes with them, which is the exact mechanism this
         # integration exists to refuse. Found by the coordinator read suite,
         # which drives this path against a hass that cannot answer.
+        domain = self._bound(spec["key"], "service_domain", spec.get("service_domain"))
+        service = self._bound(spec["key"], "service", spec.get("service"))
         try:
-            exists = self.hass.services.has_service(
-                spec["service_domain"], spec["service"]
-            )
+            exists = self.hass.services.has_service(domain, service)
         except Exception as exc:  # noqa: BLE001 — RULE 1
             self._warn_once(
                 "notify_registry",
@@ -625,7 +663,10 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             return base
 
         last_sent = None
-        st = self.hass.states.get(spec["last_sent_entity_id"])
+        st = self.hass.states.get(
+            self._bound(spec["key"], "last_sent_entity_id",
+                        spec.get("last_sent_entity_id"))
+        )
         if st is not None and st.state not in ("unknown", "unavailable", ""):
             last_sent = st.state
 
@@ -635,7 +676,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         if not exists:
             base["integrity"] = INTEGRITY_DEGRADED
             base["integrity_detail"] = (
-                spec["service_domain"] + "." + spec["service"]
+                str(domain) + "." + str(service)
                 + " is not a registered service — the notify target is gone"
             )
             base["affected"] = 1

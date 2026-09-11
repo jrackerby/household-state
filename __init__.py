@@ -19,7 +19,13 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: HouseholdStateConfigEntry
 ) -> bool:
     scan = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
-    coordinator = HouseholdStateCoordinator(hass, scan)
+    # GH #16. Every option that is not scan_interval is a source binding; the
+    # coordinator resolves each against the SOURCES row's own default. Passed
+    # as a snapshot rather than the live entry so a read mid-poll cannot see
+    # half of a reconfigure — the update listener reloads the entry, which
+    # rebuilds the coordinator with the new set.
+    bindings = {k: v for k, v in entry.options.items() if k != "scan_interval"}
+    coordinator = HouseholdStateCoordinator(hass, scan, bindings)
 
     # RULE 5. Ages load BEFORE the first refresh or every clock restarts
     # at zero on every HA restart.
