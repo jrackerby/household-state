@@ -3,10 +3,10 @@
 The resolver half of a household directive layer, plus the QUIET modifier
 derived from sleep mode.
 
-It runs **beside** `sensor.home_threat_posture`, not instead of it. It writes
-nothing, calls no service, and touches no card — it resolves state and exposes
-it. `const.py` carries the resolution rules and the list of things `0.1.0`
-deliberately does not do.
+It reads only: it writes nothing, calls no service, and touches no card — it
+resolves state and publishes it. `sensor.household_state_stage` is the surface
+consumers read. `const.py` carries the resolution rules and the scope
+decisions behind them.
 
 ## What it creates
 

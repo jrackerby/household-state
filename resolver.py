@@ -247,10 +247,10 @@ def resolve(readings):
         # KAN-210. Nothing is driving anything at Clear, but the loop
         # above will have named whichever key sits first in TIEBREAK,
         # purely because `top is None` on its first pass. A driver at
-        # severity 0 is a name with no finding behind it — it is what
-        # makes sensor.home_threat_posture read
-        # "alarm_control_panel.alarmo" whenever the house is armed and
-        # idle. There is no driver at Clear.
+        # severity 0 is a name with no finding behind it. The worked
+        # example was the since-deleted comparison reference (LAW §3),
+        # which read "alarm_control_panel.alarmo" whenever the house was
+        # armed and idle. There is no driver at Clear.
         driver = None
         detail = "no active local, state, weather, or perimeter threats"
 

@@ -54,16 +54,20 @@ lives in resolver.py where it can be tested.
     pass.
 ====================================================================
 WHAT THIS IS. The resolver half of the household directive layer
-specified in HA_Fleet_Current_State §11. It runs BESIDE
-sensor.home_threat_posture and changes nothing about it. Zero card
-edits, zero dashboard edits, zero consumers AT 0.1.0 — no longer true
-as of KAN-343 (0.4.0): integrity-card.js and room-panel.js's ring both
-default to sensor.household_state_integrity, and
-packages/household_state_integrity_notify.yaml wires it to the
-operator phone-notification automation. Superseded, not deleted, so
-the "this changes nothing live" claim in the config flow description
-stays accurate to read against — it was true once and the file that
-stopped being true about is this one.
+specified in LAW §11. IT IS THAT LAYER NOW, not a second opinion beside
+one: the comparison reference it shipped alongside is DELETED (LAW §3,
+GH-663), deliberately, once its last consumer moved to
+sensor.household_state_stage. Nothing backstops this component and
+there is nothing left to diff it against.
+
+IT HAS LIVE CONSUMERS, and has since KAN-343 (0.4.0): integrity-card.js
+and room-panel.js's ring both default to
+sensor.household_state_integrity, and
+packages/household_state_integrity_notify.yaml wires it to the operator
+phone-notification automation. THE WEAK LINK, stated where it will be
+read: an entity id changed here reaches a wall. The "zero card edits,
+zero dashboard edits, zero consumers" claim this header carried until
+GH #7 was true at 0.1.0 and had been false for five releases.
 
 WHY IT IS PYTHON AND NOT A TEMPLATE SENSOR. packages/home_posture.yaml
 duplicates one computation across SIX lockstep blocks, each guarded by
@@ -113,14 +117,17 @@ WHAT THIS DELIBERATELY DOES NOT DO
   - It owns no fetches. It reads the same entities home_posture.yaml
     reads, so any divergence between the two is attributable to the
     resolver rather than to a different feed (Playbook §14.7).
-  - DIRECTIVE IS ALWAYS `unknown` IN 0.1.0, and that is correct rather
-    than incomplete. §11.9 verified the CAP `response` field maps to
-    the directive vocabulary, but sensor.nws_union_threat exposes only
-    severity / headline / active_count / expires — it drops `response`.
-    There is no directive input on this estate today. Reporting
-    `unknown` with reason `no_cap_source` makes that visible; reporting
-    `null` would synthesise an all-clear on an axis that has no sensor,
-    which is the household-banner-card v38 defect (§2.6).
+  - DIRECTIVE HAS A LIVE INPUT, and the claim this bullet carried until
+    GH #7 — "there is no directive input on this estate today" — was
+    true at 0.1.0 and is now the opposite of the record. The CAP row
+    reads `cap_responses` off the threat sensor, a boil-water advisory
+    resolves its own directive (GH-583), and LAW §11's hard gate is
+    satisfied: deterministic EVACUATE/SHELTER/SECURE classification
+    tests plus a live-observed input path (GH #38/KAN-240). What
+    survives from the original bullet is the SHAPE and it still governs:
+    an axis with no readable source reports `unknown` with a reason,
+    never `null`, because `null` synthesises an all-clear on an axis
+    that has no sensor — the household-banner-card v38 defect.
   - It renders nothing. §11.18's hard gate — no directive surface ships
     until EVACUATE has a verified input — gates the SURFACE, not this.
 """
@@ -154,7 +161,9 @@ VERSION = _manifest_version()
 # read-only mirror and not a SOURCES row.
 QUIET_SOURCE_ENTITY = "input_boolean.sleep_mode"
 
-# Every source in 0.1.0 is a state-machine read, no IO — cheap enough
+# Every source is a state-machine read — the state machine, the entity
+# and config-entry registries, the service registry — with no network
+# or disk IO at poll time. Cheap enough
 # that 3s costs nothing extra over 30s. Lowered from 30 (GH-437) so a
 # rise publishes within one poll instead of up to 30s late. Do not raise
 # this without measuring — a poll interval longer than the fall dwell
@@ -186,8 +195,12 @@ DISP_UNPARSED = "unparsed"      # answered, severity did not parse (KAN-207)
 
 HEALTHY = (DISP_OK,)
 
-# Bands — §7. Kept identical to sensor.home_threat_posture so the two
-# can be diffed directly. Do not renumber.
+# Bands — §7. DO NOT RENUMBER, and the reason has CHANGED. These were
+# kept identical to a comparison reference so the two could be diffed
+# directly, and that reference is deleted (LAW §3). There is nothing
+# left to keep them in sync WITH; what binds them now is that they are a
+# published vocabulary — every consumer of the stage sensor reads these
+# exact words off it. Stability is owed to the surface, not to a twin.
 BAND_CLEAR = "Clear"
 BAND_ELEVATED = "Elevated"
 BAND_CRITICAL = "Critical"

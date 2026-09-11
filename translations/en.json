@@ -6,7 +6,7 @@
     "step": {
       "user": {
         "title": "Household State",
-        "description": "Resolves the household stage, directive and integrity axes from the existing threat sources, plus the QUIET modifier from sleep mode. Runs beside sensor.home_threat_posture and changes nothing about it."
+        "description": "Resolves the household stage, directive and integrity axes from the existing threat sources, plus the QUIET modifier from sleep mode. It reads only: it writes nothing, calls no service, and changes no other entity."
       }
     }
   },

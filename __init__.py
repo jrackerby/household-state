@@ -1,9 +1,9 @@
 """household_state — the resolver half of the §11 directive layer, plus
 the QUIET modifier from sleep mode.
 
-Runs BESIDE sensor.home_threat_posture. It writes nothing, calls no
-service, and touches no card. See const.py for the rules and for what
-0.1.0 deliberately does not do.
+READ-ONLY: it writes nothing, calls no service, and touches no card. It
+resolves state and publishes it; sensor.household_state_stage is the
+surface consumers read. See const.py for the rules and the scope decisions.
 """
 
 from __future__ import annotations
