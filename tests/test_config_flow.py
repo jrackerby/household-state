@@ -1,6 +1,6 @@
 """The config flow, exercised. Quality scale: `config-flow-test-coverage`.
 
-config_flow.py sat at 0% when this repo was gap-listed (GH #2), which is the
+config_flow.py sat at 0% when this repo was gap-listed (#2), which is the
 rule's floor exactly inverted: the flow is the one code path every installer
 runs, and it was the one path nothing here touched.
 
