@@ -165,7 +165,7 @@ DIRECTIVE_EVACUATE = "evacuate"
 # STAGE-only awareness on the argument that the vocabulary had three words and
 # adding one was a ruling — which was true, and which was then made. The
 # household axis exists to tell people what to do; a boil-water advisory is
-# one of the most literal instructions this estate will ever carry, and
+# one of the most literal instructions this installation will ever carry, and
 # elevating a banner without saying "boil it" is half a surface.
 #
 # LOWEST PRECEDENCE, DELIBERATELY. It is checked after secure, so a tornado
@@ -248,7 +248,7 @@ DIRECTIVE_EVENT_MAP = {
 #
 # NWS tags Severe Thunderstorm Warning as `response: Shelter`; all seven
 # live Shelter alerts nationally at the time of the ruling were STWs.
-# On this estate an STW MUST NOT send anyone to the main closet. It
+# On this installation an STW MUST NOT send anyone to the main closet. It
 # fires several times a summer, and a directive that fires routinely is
 # the severity inversion wearing a different costume — a red that never
 # clears teaches everyone to ignore red.

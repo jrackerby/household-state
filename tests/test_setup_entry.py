@@ -37,7 +37,7 @@ class FakeHass(ha_stubs.FakeHass):
     """The suite's standard hass, plus the entry manager setup drives.
 
     It answers nothing — every source reads as missing — which is the right
-    shape here: setup must succeed against an estate that cannot be read yet,
+    shape here: setup must succeed against a registry that cannot be read yet,
     because on a real boot it is exactly that (the registry restores
     an entity row long before its owner publishes a state).
     """

@@ -150,7 +150,7 @@ def test_a_defect_that_survives_the_boot_still_logs_once_armed(caplog):
 
 
 def _perimeter_hass(states):
-    """Four labelled perimeter contacts, exactly the shape the live estate
+    """Four labelled perimeter contacts, exactly the shape a running Home Assistant
     resolves off `fls_device` — a set discovered every poll, never pinned."""
     reg = FakeEntityRegistry(
         FakeRegistryEntry(f"binary_sensor.{d}_contact", labels=("fls_device",))

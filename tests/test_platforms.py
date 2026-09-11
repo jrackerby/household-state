@@ -1,7 +1,7 @@
 """The entities themselves: what they publish, and what they refuse to do.
 
 binary_sensor.py was at 0% and sensor.py at 71% when this repo was gap-listed.
-These are the classes every surface in the estate actually reads, and the
+These are the classes every surface in the installation actually reads, and the
 contract they hold: an entity here NEVER goes unavailable, because
 attributes on an unavailable entity vanish and that is precisely how a broken
 collector reads green.

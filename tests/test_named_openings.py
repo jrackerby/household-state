@@ -56,11 +56,11 @@ from household_state.const import (  # noqa: E402
 )
 
 ALARM_ROW = next(s for s in SOURCES if s["key"] == "alarm")
-# #16: SOURCES ships no estate ids, so the suite names its own.
+# #16: SOURCES ships no installation-specific ids, so the suite names its own.
 _ALARM_ENTITY = "alarm_control_panel.test_panel"
 PERIM_ROW = next(s for s in SOURCES if s["key"] == "perimeter_open")
 
-# Real ids off this estate's `fls_device` label, warts intact. The stutter
+# Real ids off this installation's `fls_device` label, warts intact. The stutter
 # in the first two is not a typo -- HA mints an id by concatenating device
 # and entity names, and these are what `label_entities('fls_device')`
 # actually returns. They are here because a naming change that only works

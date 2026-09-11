@@ -1,6 +1,6 @@
 """_read_source and its friends: one source in, one reading out.
 
-This is the code that actually touches the estate, and it was the least
+This is the code that actually touches the installation, and it was the least
 covered file in the repo (44%) when this repo was gap-listed. Everything here
 serves one contract, RULE 1 / THIS COORDINATOR NEVER RAISES, and it
 NEVER returns severity 0 for a source it could not read. That substitution is
@@ -25,7 +25,7 @@ from household_state.const import (
 )
 
 # The two names these tests bind to. Local to the suite on purpose: the point
-# of #16 is that the component ships with no estate ids of its own.
+# of #16 is that the component ships with no installation-specific ids of its own.
 PERIMETER_LABEL_FOR_TESTS = "perimeter_test_label"
 QUIET_ENTITY_FOR_TESTS = "input_boolean.quiet_test"
 from household_state.coordinator import HouseholdStateCoordinator
@@ -39,7 +39,7 @@ from ha_stubs import (
 )
 
 
-# #16: SOURCES no longer carries this estate's entity ids, so a test that
+# #16: SOURCES no longer carries this installation's entity ids, so a test that
 # wants a row to READ something must say where. Binding explicitly is the
 # honest version of what these tests always meant — they used to inherit one
 # particular household's ids by accident of const.py.

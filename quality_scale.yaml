@@ -107,7 +107,7 @@ rules:
     comment: >-
       README opens with what the integration resolves and what it deliberately
       does not do. A custom integration has no home-assistant.io page; the
-      README is the documentation, as it is across this estate's component
+      README is the documentation, as it is across this installation's component
       repos.
   docs-installation-instructions:
     status: done

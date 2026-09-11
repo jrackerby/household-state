@@ -6,7 +6,7 @@ because Home Assistant loads it AS `custom_components/household_state`.
 The directory on disk is `household-state`, which is not an importable module
 name, so a test importing `household_state` has to be handed the layout HA
 gives it. A symlink in a temp dir does that without restructuring the repo
-and breaking the submodule path.
+and breaking the way HACS installs it.
 """
 
 import atexit

@@ -1,4 +1,4 @@
-"""Nothing shipped names an entity the estate has deleted.
+"""Nothing shipped names an entity the installation has deleted.
 
 sensor.home_threat_posture is DELETED, reversing an earlier decision to keep
 it frozen — it was the comparison reference for
