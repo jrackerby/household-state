@@ -1,12 +1,58 @@
 # Household State
 
-The resolver half of a household directive layer, plus the QUIET modifier
-derived from sleep mode.
+Resolves what a home already knows about hazards and readiness — weather and
+CAP alerts, public advisories, an alarm panel, device-health sensors — into a
+small set of answers a display or an automation can act on, and publishes them
+as entities.
 
-It reads only: it writes nothing, calls no service, and touches no card — it
-resolves state and publishes it. `sensor.household_state_stage` is the surface
-consumers read. `const.py` carries the resolution rules and the scope
-decisions behind them.
+It **reads only**. It writes nothing, calls no service, creates no helper and
+modifies no entity it reads. Every source is an entity you already have; this
+integration is the resolution layer over them.
+
+## Why it is not one alert level
+
+A single `normal / elevated / critical` number collapses three questions that
+need different answers, and the collapse is not recoverable downstream. So this
+publishes them separately:
+
+| entity | values | answers |
+|---|---|---|
+| `sensor.household_state_stage` | `normal`, `elevated`, `critical`, `unknown` | **how bad is it** — a severity ramp over every source on the stage axis |
+| `sensor.household_state_directive` | `none`, `secure`, `shelter`, `evacuate`, `boil_water` | **what should people do** — an instruction, not an intensity |
+| `sensor.household_state_integrity` | `ok`, `degraded`, `unknown` | **can this layer be trusted** — whether the sources behind the two answers above are readable |
+| `binary_sensor.household_state_quiet` | `on` / `off` | whether the house is asleep. A modifier, not a severity: it suppresses nothing on any axis |
+| `binary_sensor.household_state_feed_health` | problem | any source unhealthy, with `sources_healthy` / `sources_total` / `confidence` |
+| `sensor.household_state_<source>` | per source | diagnostic, one per bound source — where a dead feed becomes visible instead of becoming a zero |
+
+Severity and instruction are genuinely independent: a CAP alert can be
+`Moderate` and still say *evacuate*, and a `Severe` one can ask for nothing at
+all. Integrity is a third audience again — it addresses whoever maintains the
+system, not the household, which is why it never moves stage.
+
+Each axis carries `driver` (which source drove it), `severity`, `since` and the
+directive's `reason` and `suppressed` list as attributes, so a surface can say
+*which* rather than *that*.
+
+## The rules that make the answers trustworthy
+
+These are the invariants; `resolver.py` holds them and imports nothing from
+`homeassistant`, so they are testable without Home Assistant running.
+
+- **`unknown` is not `normal`, and never green.** A source that could not be
+  read reports `absent` loudly rather than as a quiet zero.
+- **`ok at zero` and `could not read` do not collapse**, on any source, at any
+  layer. A per-source sensor's state is the *worse* of the two — the read
+  succeeding is not the source being healthy.
+- **Integrity never moves stage.** There is no `severity` on the integrity
+  axis.
+- **Fall dwell, never rise dwell.** A rise in severity publishes immediately; a
+  fall is held for a dwell so a flap does not read as an all-clear. Losing
+  sight of a source counts as a fall.
+- **The coordinator never raises `UpdateFailed`** and every entity stays
+  available. A monitor that disappears with its subject cannot report the
+  subject down.
+- **Nothing is named at severity zero.** A declined signal is stated on the
+  entity (`suppressed`), never silently dropped.
 
 ## What it creates
 
@@ -24,14 +70,15 @@ or endpoint. One option, changed under *Configure* on the entry:
 **Three seconds is deliberate and lowering it buys nothing.** Each poll is a
 state-machine read — the state machine and the entity, config-entry and
 service registries — with no network or disk IO, so the interval is set by
-what a wall display needs rather than by a remote's rate limit. It keeps STAGE
-rise and fall latency under ten seconds so a tablet rendering the state does
+what a display needs rather than by a remote API's rate limit. It keeps stage
+rise and fall latency under ten seconds, so a panel rendering the state does
 not lag the house.
 
-**Do not raise it past 8 seconds without reading `const.py` first.** A fall in
-severity is held for a dwell before it publishes (a rise never is). A poll
-interval longer than that dwell makes the dwell meaningless — the flap it
-exists to absorb lands between two polls and publishes as a real fall.
+**Do not raise it past 8 seconds without reading `const.py` first.** Per the
+fall-dwell rule above, a drop in severity is held for a dwell before it
+publishes. A poll interval longer than that dwell makes the dwell meaningless —
+the flap it exists to absorb lands between two polls and publishes as a real
+fall.
 
 ### Which entities supply each source
 
@@ -82,7 +129,7 @@ Binding the slug to the previous key keeps the published id exactly where it
 was. The stage sensor's `driver` attribute reports the same slug, so a surface
 that joins `driver` to a per-source entity keeps matching.
 
-## One rule worth not breaking
+## One implementation rule worth not breaking
 
 Entity ages load **before** the first refresh. Skip that and every age clock
 restarts at zero on every Home Assistant restart, which reads as a house that
@@ -107,8 +154,7 @@ repository from HACS.
 Deleting the entry frees the ids in the UI but not in the registry, so a
 reinstall assigns `_2` suffixes — `sensor.household_state_stage_2` — and every
 dashboard, automation and template still points at the originals, which now
-belong to nothing. This integration already carries one live scar of exactly
-that: `sensor.household_state_boil_water_advisory_2`.
+belong to nothing.
 
 So if you intend to reinstall, delete the old entity rows in *Settings →
 Devices & Services → Entities* — filter on `household_state`, including the

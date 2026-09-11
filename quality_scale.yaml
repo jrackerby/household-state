@@ -120,9 +120,9 @@ rules:
       README "Remove" covers deleting the entry and the HACS repository, and
       carries the trap that actually bites: HA never reclaims an entity id, so
       a reinstall lands `_2` suffixes while every dashboard and automation
-      keeps pointing at ids that now belong to nothing. This integration
-      already carries one live scar of exactly that. Also states what
-      is NOT left behind, since it writes nothing outside its own ledger.
+      keeps pointing at ids that now belong to nothing, and tells the reader
+      to delete the old rows before reinstalling. Also states what is NOT left
+      behind, since it writes nothing outside its own ledger.
   docs-triggers:
     status: exempt
     comment: Registers no triggers.
