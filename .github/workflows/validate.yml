@@ -153,14 +153,12 @@ jobs:
           # repo had neither. Both are set now, so both are ENFORCED -- going
           # on ignoring a check that would pass is how a gate stops being one.
           #
-          # `brands` stays ignored, and the reason has NARROWED. The assets
-          # exist now (brand/), which is what makes HA render an icon for a
-          # custom integration. What the HACS check actually reads is
-          # home-assistant/brands, where this domain is absent -- both
-          # core_integrations/household_state and
-          # custom_integrations/household_state 404 (measured 2026-09-11) --
-          # so the check still cannot pass, and un-ignoring it would only turn
-          # CI red. The submission needs this repo public: #1. Re-test this
-          # ignore the day that lands; an ignored check that would pass is how
-          # a gate stops being one.
-          ignore: brands
+          # NOTHING IS IGNORED HERE ANY MORE. `brands` was the last one, and
+          # the reason it was ignored turned out to be wrong about what the
+          # check reads. HACS's validate/brands.py sets
+          # `asset_path = "brand/icon.png"` when `content_in_root` is set, and
+          # returns as soon as that path is in the repo tree; the
+          # home-assistant/brands lookup is only its fallback. The assets are
+          # in the tree, so the check passes on them and the registry is never
+          # consulted. Re-tested the day the repository went public, which is
+          # what the previous note here asked for.

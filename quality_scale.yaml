@@ -44,19 +44,37 @@ rules:
       pinned it at 3s to keep STAGE rise and fall latency under ten seconds on
       a tablet rendering the household's instruction row.
   brands:
-    status: todo
+    status: done
     comment: >-
-      BLOCKED ON #1, not on work in this repo. Assets now ship in-repo
-      (brand/icon.png 256, icon@2x.png 512, logo.png), which is what makes HA
-      render an icon for a custom integration — the practical effect the rule
-      exists to produce. The rule itself asks for an entry in
-      home-assistant/brands, and that is measurably absent: both
-      core_integrations/household_state and custom_integrations/household_state
-      are 404 (checked 2026-09-11). A submission needs this repo public, which
-      is #1. Status stays todo rather than done because the registry entry is
-      the rule and it does not exist; the HACS brands check stays ignored in
-      validate.yml for the same reason — it cannot pass for an unsubmitted
-      domain, so un-ignoring it would only turn CI red.
+      DONE ON THE IN-REPO MECHANISM, and the registry submission this rule used
+      to require is the legacy path, not the current one. Measured rather than
+      assumed, against three primary sources on 2026-09-11:
+
+      home-assistant/brands' own README calls `custom_integrations` a "Legacy
+      folder: Since HA 2026.3.0, custom components can include their brand
+      icons directly." hacs.json declares a 2026.8.0 minimum, so this
+      integration is entirely past that line.
+
+      Home Assistant core reads the assets from the integration itself:
+      loader.py's `has_branding` is `"brand" in self._top_level_files`, and
+      components/brands/__init__.py resolves
+      `brand_dir = Path(integration.file_path) / "brand"` for a custom
+      integration. `brand/icon.png` (256) and `brand/icon@2x.png` (512) are
+      exactly what it reads.
+
+      HACS's own check agrees: validate/brands.py sets
+      `asset_path = "brand/icon.png"` when `content_in_root` is set — which
+      hacs.json sets — and RETURNS as soon as that path is in the repo tree.
+      The home-assistant/brands lookup is only its fallback, and is never
+      reached here. That is why `ignore: brands` came out of validate.yml in
+      the same change: the check now passes on its own, and an ignored check
+      that would pass is how a gate stops being one.
+
+      `brand/logo.png` was DELETED rather than kept. It was a byte-identical
+      copy of icon.png, and both layers already substitute one for the other —
+      brands' README says to add only the icon images when they are the same,
+      and core's IMAGE_FALLBACKS maps `logo.png` to `icon.png`. It was a second
+      copy that could only drift.
   common-modules: done
   config-flow: done
   config-flow-test-coverage:

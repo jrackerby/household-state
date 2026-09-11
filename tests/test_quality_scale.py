@@ -164,8 +164,9 @@ def test_a_declared_tier_is_backed_by_the_gap_list(rules):
     claimed = manifest.get("quality_scale")
 
     if claimed is None:
-        # Declaring nothing is never a false claim. Today that is also the
-        # only honest option: `brands` is short of Bronze.
+        # Declaring nothing is never a false claim, so it is always allowed.
+        # It is no longer the only honest option — Bronze is met — but this
+        # test's job is to catch an OVER-claim, not to require a claim.
         return
 
     names = [name for name, _ in TIERS]

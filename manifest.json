@@ -10,6 +10,7 @@
   "integration_type": "service",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/jrackerby/household-state/issues",
+  "quality_scale": "bronze",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.11.0"
