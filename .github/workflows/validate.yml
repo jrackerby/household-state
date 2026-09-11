@@ -78,7 +78,11 @@ jobs:
       # moving under it. The trade is stated in that file's docstring: it
       # proves nothing about core's real registry APIs, which is why both
       # registry lookups in the coordinator keep their RULE 1 guards.
-      - run: pip install pytest
+      # LAW §15: test dependencies are declared BESIDE the suite and CI installs
+      # from that file. A list here is a second copy, stale on the next import
+      # added, and its failure reads as a broken test rather than as a missing
+      # declaration (GH-670, tempest_wx's `import yaml`).
+      - run: pip install -r tests/requirements.txt
 
       # cd, not `pytest tests/`: the repo root carries the integration's own
       # __init__.py, and any collection tree containing it makes a pytest

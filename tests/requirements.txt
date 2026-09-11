@@ -1,0 +1,12 @@
+# Test dependencies, DECLARED BESIDE THE SUITE (LAW §15).
+#
+# A list in .github/workflows/validate.yml is a second copy: it goes stale on
+# the next import added, and its failure reads as a broken test rather than as
+# a missing declaration. tempest_wx is the worked example — `import yaml` was
+# green for months inside jrackerby/HA's shared .venv and went red at
+# collection on that repo's first CI run (GH-670). CI installs from THIS file.
+#
+# Note what is NOT here: homeassistant. tests/ha_stubs.py supplies the slice of
+# core the component imports, deliberately — see validate.yml's tests job.
+pytest
+PyYAML

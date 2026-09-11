@@ -1,0 +1,302 @@
+# https://developers.home-assistant.io/docs/core/integration-quality-scale/
+#
+# TARGET: SILVER. LAW §15 makes the quality scale the build standard for every
+# custom_components/* repo — Bronze the floor for anything shipped, Silver the
+# target for anything reading a device, a service, or another integration's
+# entities. This integration reads other integrations' entities as its ENTIRE
+# input, so Silver is the target and every Bronze and Silver rule below carries
+# a verdict.
+#
+# NOTHING VALIDATES THIS FILE FOR A CUSTOM COMPONENT. hassfest's
+# validate_iqs_file opens with `if not integration.core: return`, so it is never
+# read here, while manifest.json's schema still accepts a `quality_scale` key —
+# a tier declared there would be a self-claim with no gate behind it. Two
+# consequences, both deliberate:
+#
+#   1. manifest.json declares NO quality_scale key, and must not until the
+#      Bronze todos below are closed. Bronze is not met today.
+#   2. tests/test_quality_scale.py is this file's gate: it asserts every rule is
+#      present exactly once, that each status is one hassfest accepts, and that
+#      every `exempt` carries the reason the schema requires. A gap-list nobody
+#      validates goes stale the first time a rule is added (LAW §10: make the
+#      gate impossible to skip).
+#
+# A DEVIATION IS A RULING WITH A CITATION (LAW §15), never a silent exception.
+# The two below — entity-unavailable and test-before-setup — are both the same
+# ruling, LAW §11's never-raise contract, and are recorded there.
+
+rules:
+  # ------------------------------------------------------------------ Bronze
+  action-setup:
+    status: exempt
+    comment: >-
+      Registers no actions. This integration writes nothing and calls no
+      service — it resolves state from other integrations' entities and
+      publishes it. `hass.services.has_service` is READ once, to score the
+      operator notify path as a source; nothing is registered.
+  appropriate-polling:
+    status: done
+    comment: >-
+      DataUpdateCoordinator with update_interval from the entry's
+      `scan_interval` option, DEFAULT_SCAN_INTERVAL=3s, bounded 1-300 by the
+      options flow. Every source read is a state-machine read with no IO, so
+      the interval is set by the display requirement, not by a remote: GH-454
+      pinned it at 3s to keep STAGE rise and fall latency under ten seconds on
+      a tablet rendering the household's instruction row.
+  brands:
+    status: todo
+    comment: >-
+      No brand assets in-repo and no accepted home-assistant/brands submission,
+      so `.github/workflows/validate.yml` ignores the HACS brands check —
+      until one of the two exists it can only ever fail. Closing this means
+      committing brand/icon.png the way nanit does.
+  common-modules: done
+  config-flow: done
+  config-flow-test-coverage:
+    status: todo
+    comment: >-
+      config_flow.py sits at 0% — the suite does not exercise the flow at all.
+      The rule wants full coverage of that file.
+  dependency-transparency:
+    status: done
+    comment: >-
+      `requirements` is empty and the component imports nothing outside
+      Home Assistant and the standard library. There is no dependency to be
+      transparent about.
+  docs-actions:
+    status: exempt
+    comment: Registers no actions, so there are none to document.
+  docs-conditions:
+    status: exempt
+    comment: Registers no conditions.
+  docs-high-level-description:
+    status: done
+    comment: >-
+      README opens with what the integration resolves and what it deliberately
+      does not do. A custom integration has no home-assistant.io page; the
+      README is the documentation, as it is across this estate's component
+      repos.
+  docs-installation-instructions:
+    status: done
+    comment: >-
+      README "Install" carries the HACS custom-repository route and the
+      content_in_root layout note that makes it work.
+  docs-removal-instructions:
+    status: todo
+    comment: README has no removal section.
+  docs-triggers:
+    status: exempt
+    comment: Registers no triggers.
+  entity-event-setup:
+    status: exempt
+    comment: >-
+      Every entity is a CoordinatorEntity and subscribes to nothing of its own.
+      The one lifecycle subscription is the coordinator's logging arm in
+      __init__.py, registered via async_at_started and torn down through
+      entry.async_on_unload.
+  entity-unique-id:
+    status: done
+    comment: >-
+      Every entity sets _attr_unique_id from the entry_id plus a stable
+      per-entity suffix; source sensors use the SOURCES row's `key`, which
+      tests/test_sources_unique.py asserts is unique.
+  has-entity-name:
+    status: done
+    comment: >-
+      Set once on the shared HouseholdStateEntity base, so ids slug from the
+      device name — sensor.household_state_stage, not
+      sensor.household_state_stage_stage.
+  runtime-data:
+    status: todo
+    comment: >-
+      Still stores the coordinator in hass.data[DOMAIN][entry.entry_id] and
+      reads it back in both platforms' async_setup_entry. The rule wants
+      entry.runtime_data with a typed ConfigEntry alias.
+  test-before-configure:
+    status: exempt
+    comment: >-
+      The user step takes no input — there is no host, credential or endpoint
+      to test. The integration's inputs are other integrations' entities, which
+      may legitimately not exist yet at configure time, and a source that
+      cannot be read is this integration's OUTPUT (published as `absent` /
+      `unknown` on the entity attributes), never a setup failure. Refusing the
+      entry over one would be the KAN-139 collapse the component exists to
+      refuse.
+  test-before-setup:
+    status: exempt
+    comment: >-
+      DEVIATION, ruled in LAW §11 and cited in LAW §15. The coordinator NEVER
+      raises UpdateFailed, so async_config_entry_first_refresh has no failure
+      path to convert into ConfigEntryNotReady, and every entity overrides
+      `available` to True. That is deliberate: a monitor that disappears with
+      its subject cannot report the subject down. The quality scale's own
+      example raises on an unreachable device or service; a coordinator reading
+      other entities has no service to lose, so the rule does not govern here
+      (LAW §15: apply a rule where it governs, not where it merely sounds
+      relevant).
+  unique-config-entry:
+    status: done
+    comment: >-
+      manifest declares single_config_entry, and the flow aborts on
+      `single_instance_allowed` via _async_current_entries. There is one
+      household.
+
+  # ------------------------------------------------------------------ Silver
+  action-exceptions:
+    status: exempt
+    comment: Registers no actions.
+  config-entry-unloading:
+    status: done
+    comment: >-
+      async_unload_entry unloads both platforms and drops the coordinator; the
+      options-update listener and the async_at_started logging arm are both
+      registered through entry.async_on_unload.
+  docs-configuration-parameters:
+    status: todo
+    comment: >-
+      README names `scan_interval` as the only option but documents neither its
+      default (3s), its accepted range (1-300), nor what it buys — the under-10s
+      STAGE latency GH-454 set it for.
+  docs-installation-parameters:
+    status: exempt
+    comment: >-
+      The user step's schema is empty. There are no installation parameters to
+      document; the one runtime option is covered by
+      docs-configuration-parameters above.
+  entity-unavailable:
+    status: exempt
+    comment: >-
+      DEVIATION, ruled in LAW §11 and cited in LAW §15 as this estate's worked
+      example. Every entity overrides `available` to True and an unreadable
+      source surfaces as state `unknown` with a `disposition` attribute, never
+      as the entity going away. Attributes on an unavailable entity vanish,
+      which is precisely how a broken collector reads green — the defect this
+      integration was built to make visible. The rule's OTHER half does govern
+      and was adopted; see log-when-unavailable.
+  integration-owner:
+    status: done
+    comment: manifest `codeowners` is @jrackerby.
+  log-when-unavailable:
+    status: done
+    comment: >-
+      The half of the rule that governs here, adopted in GH-491. A source that
+      cannot be read logs once at the crossing and once on recovery, at INFO —
+      it is the integration reporting its own subject, not an integration
+      error. Deduped on a stable CONDITION token, never on the message: the
+      perimeter sentence carries a count, so message-deduping re-fired on every
+      membership change while the condition never moved. Logging is gated on HA
+      reaching RUNNING and records nothing while silent, or a fault present
+      through startup would read as already-reported and never log. Config
+      defects that need a human edit (a missing entity, an unresolvable label,
+      an unparseable attribute) stay WARNING.
+  parallel-updates:
+    status: todo
+    comment: >-
+      Neither sensor.py nor binary_sensor.py declares PARALLEL_UPDATES. Every
+      entity is coordinator-driven and read-only, so the correct declaration is
+      0 in both platforms — but the rule wants it explicit, and it is not.
+  reauthentication-flow:
+    status: exempt
+    comment: >-
+      No credentials. The integration authenticates to nothing; it reads the
+      local state machine.
+  test-coverage:
+    status: todo
+    comment: >-
+      49% across the package (config_flow 0%, binary_sensor 0%, coordinator
+      44%, resolver 50%, sensor 70%); the rule wants above 95%. The 30 tests
+      that exist are targeted regression cases for specific rulings rather than
+      a coverage suite. resolver.py imports nothing from homeassistant by
+      design (LAW §11), so it is the cheapest half to raise.
+
+  # -------------------------------------------------------------------- Gold
+  # Not the target. Listed so the file stays complete when the target moves,
+  # and so a rule already satisfied is not re-derived from nothing later.
+  devices:
+    status: done
+    comment: >-
+      One device for the whole layer, defined once in entity.py, identified by
+      the entry_id.
+  diagnostics: todo
+  discovery:
+    status: exempt
+    comment: >-
+      Nothing to discover. The integration reads entities that are already in
+      the registry; it has no network presence.
+  discovery-update-info:
+    status: exempt
+    comment: No discovery, and no host or address to keep up to date.
+  docs-data-update: todo
+  docs-examples: todo
+  docs-known-limitations: todo
+  docs-supported-devices:
+    status: exempt
+    comment: Supports no devices. Its inputs are other integrations' entities.
+  docs-supported-functions: todo
+  docs-troubleshooting: todo
+  docs-use-cases: todo
+  dynamic-devices:
+    status: exempt
+    comment: >-
+      The device set is fixed at one. Sources are rows in const.py's SOURCES,
+      not discovered devices.
+  entity-category:
+    status: done
+    comment: >-
+      The per-source sensors are EntityCategory.DIAGNOSTIC; the three axis
+      sensors and the two binary sensors are primary state and correctly carry
+      none.
+  entity-device-class:
+    status: todo
+    comment: >-
+      binary_sensor.feed_health is device_class PROBLEM. The Quiet mirror and
+      the three axis sensors carry none — Quiet has no fitting class, but the
+      axis sensors have never been assessed against SensorDeviceClass.ENUM with
+      an options list, which is what they are.
+  entity-disabled-by-default:
+    status: todo
+    comment: >-
+      Every entity is enabled. The per-source diagnostic sensors are the
+      candidates, but they are what an operator board reads to tell a dead feed
+      from a zero, so disabling them by default needs a ruling, not a default.
+  entity-translations:
+    status: todo
+    comment: >-
+      Entity names are hardcoded _attr_name strings, including the SOURCES
+      rows' `name`. translations/en.json covers the config and options flows
+      only.
+  exception-translations:
+    status: exempt
+    comment: Raises no exceptions to a user — it registers no actions and never fails setup.
+  icon-translations:
+    status: todo
+    comment: Icons are hardcoded _attr_icon strings rather than icons.json.
+  reconfiguration-flow:
+    status: todo
+    comment: >-
+      An options flow exists for scan_interval; there is no reconfigure step.
+      With no host or credential to change, the value of one is low.
+  repair-issues:
+    status: todo
+    comment: >-
+      Nothing raises a repair. The candidate is a SOURCES row naming an entity
+      that does not exist, which is today a WARNING an operator has to find in
+      the log — the `_DEFECT_STATES` class that needs a human edit is exactly
+      what the repairs surface is for.
+  stale-devices:
+    status: exempt
+    comment: One fixed device, removed with the entry.
+
+  # ---------------------------------------------------------------- Platinum
+  async-dependency:
+    status: exempt
+    comment: No dependency. Every read is against the in-process state machine.
+  inject-websession:
+    status: exempt
+    comment: Makes no HTTP requests.
+  strict-typing:
+    status: todo
+    comment: >-
+      Partially typed. The coordinator and resolver carry annotations; both
+      platforms' async_setup_entry and the entity constructors do not, and
+      there is no py.typed marker or mypy gate.
