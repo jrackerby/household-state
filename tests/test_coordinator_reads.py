@@ -17,13 +17,17 @@ import pytest
 
 from household_state.const import (
     DISP_ABSENT,
+    bind_key,
     DISP_OK,
     DISP_UNKNOWN,
     DISP_UNPARSED,
     DISP_UNREACHABLE,
-    PERIMETER_LABEL,
-    QUIET_SOURCE_ENTITY,
 )
+
+# The two names these tests bind to. Local to the suite on purpose: the point
+# of GH #16 is that the component ships with no estate ids of its own.
+PERIMETER_LABEL_FOR_TESTS = "perimeter_test_label"
+QUIET_ENTITY_FOR_TESTS = "input_boolean.quiet_test"
 from household_state.coordinator import HouseholdStateCoordinator
 
 from ha_stubs import (
@@ -35,9 +39,25 @@ from ha_stubs import (
 )
 
 
-def coordinator(states=None, entity_registry=None, label_registry=None, armed=True):
+# GH #16: SOURCES no longer carries this estate's entity ids, so a test that
+# wants a row to READ something must say where. Binding explicitly is the
+# honest version of what these tests always meant — they used to inherit one
+# particular household's ids by accident of const.py.
+TEST_BINDINGS = {
+    bind_key("perimeter", "label"): PERIMETER_LABEL_FOR_TESTS,
+    bind_key("notify_health", "service_domain"): "notify",
+    bind_key("notify_health", "service"): "test_target",
+    bind_key("notify_health", "last_sent_entity_id"): "sensor.notify_last_sent",
+    bind_key("quiet", "entity_id"): QUIET_ENTITY_FOR_TESTS,
+}
+
+
+def coordinator(states=None, entity_registry=None, label_registry=None,
+                armed=True, bindings=None):
     hass = FakeHass(states, entity_registry, label_registry)
-    c = HouseholdStateCoordinator(hass, 3)
+    merged = dict(TEST_BINDINGS)
+    merged.update(bindings or {})
+    c = HouseholdStateCoordinator(hass, 3, merged)
     if armed:
         c.async_arm_logging()
     return c
@@ -273,17 +293,17 @@ def test_a_missing_affected_count_reads_zero_not_none():
 # ==================================================================== quiet
 
 def test_quiet_reads_the_mirror():
-    c = coordinator({QUIET_SOURCE_ENTITY: FakeState("on")})
+    c = coordinator({QUIET_ENTITY_FOR_TESTS: FakeState("on")})
     assert c._read_quiet()["quiet"] is True
-    c = coordinator({QUIET_SOURCE_ENTITY: FakeState("off")})
+    c = coordinator({QUIET_ENTITY_FOR_TESTS: FakeState("off")})
     assert c._read_quiet()["quiet"] is False
 
 
 @pytest.mark.parametrize("states", [
     {},
-    {QUIET_SOURCE_ENTITY: FakeState("unavailable")},
-    {QUIET_SOURCE_ENTITY: FakeState("unknown")},
-    {QUIET_SOURCE_ENTITY: FakeState("")},
+    {QUIET_ENTITY_FOR_TESTS: FakeState("unavailable")},
+    {QUIET_ENTITY_FOR_TESTS: FakeState("unknown")},
+    {QUIET_ENTITY_FOR_TESTS: FakeState("")},
 ])
 def test_an_unreadable_sleep_mode_is_none_never_false(states):
     """`quiet` is None, never False, when the source cannot be read — an
@@ -295,12 +315,12 @@ def test_an_unreadable_sleep_mode_is_none_never_false(states):
 
 def test_quiet_names_the_entity_it_mirrors_even_when_it_cannot_read_it():
     out = coordinator({})._read_quiet()
-    assert out["quiet_source_entity_id"] == QUIET_SOURCE_ENTITY
+    assert out["quiet_source_entity_id"] == QUIET_ENTITY_FOR_TESTS
 
 
 # ================================================================ perimeter
 
-def _registry(*entity_ids, label="fls_device"):
+def _registry(*entity_ids, label=PERIMETER_LABEL_FOR_TESTS):
     entries = [FakeRegistryEntry(eid, labels=(label,)) for eid in entity_ids]
     return FakeEntityRegistry(entries), FakeLabelRegistry([label])
 
@@ -311,12 +331,12 @@ def test_a_label_that_does_not_resolve_is_absent_not_an_empty_perimeter():
     c = coordinator({}, ereg, FakeLabelRegistry([]))
     r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
     assert r["disposition"] == DISP_ABSENT
-    assert PERIMETER_LABEL in r["detail"]
+    assert PERIMETER_LABEL_FOR_TESTS in r["detail"]
     assert r["severity"] is None
 
 
 def test_a_label_resolving_to_nothing_is_also_absent():
-    c = coordinator({}, FakeEntityRegistry([]), FakeLabelRegistry([PERIMETER_LABEL]))
+    c = coordinator({}, FakeEntityRegistry([]), FakeLabelRegistry([PERIMETER_LABEL_FOR_TESTS]))
     r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
     assert r["disposition"] == DISP_ABSENT
     assert "zero members" in r["detail"] or "no contacts" in r["detail"]
@@ -340,7 +360,7 @@ def test_a_registry_that_raises_is_caught_rather_than_taking_everything_down():
 
 
 def test_an_all_closed_perimeter_is_a_real_zero_and_names_nothing():
-    ereg, lreg = _registry("binary_sensor.front_door", label=PERIMETER_LABEL)
+    ereg, lreg = _registry("binary_sensor.front_door", label=PERIMETER_LABEL_FOR_TESTS)
     c = coordinator({"binary_sensor.front_door": FakeState("off")}, ereg, lreg)
     r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
     assert r["disposition"] == DISP_OK
@@ -349,7 +369,7 @@ def test_an_all_closed_perimeter_is_a_real_zero_and_names_nothing():
 
 
 def test_an_open_but_not_yet_sustained_member_does_not_escalate():
-    ereg, lreg = _registry("binary_sensor.front_door", label=PERIMETER_LABEL)
+    ereg, lreg = _registry("binary_sensor.front_door", label=PERIMETER_LABEL_FOR_TESTS)
     c = coordinator({"binary_sensor.front_door": FakeState("on")}, ereg, lreg)
     r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
     assert r["open_count"] == 1
@@ -361,7 +381,7 @@ def test_an_unreadable_member_makes_the_source_blind_rather_than_closed():
     for weeks after the Ring swap: the template's `is not none` guard failed
     permissive, so a deleted contact read as 'off'."""
     ereg, lreg = _registry("binary_sensor.front_door", "binary_sensor.patio",
-                           label=PERIMETER_LABEL)
+                           label=PERIMETER_LABEL_FOR_TESTS)
     c = coordinator({"binary_sensor.front_door": FakeState("off")}, ereg, lreg)
     r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
     assert r["blind"] == ["binary_sensor.patio"]
@@ -500,7 +520,9 @@ def test_a_registered_notify_service_reads_healthy():
     assert specs, "no notify_health row in SOURCES"
     sp = specs[0]
     c = coordinator({})
-    c.hass.services = FakeServices([(sp["service_domain"], sp["service"])])
+    domain = TEST_BINDINGS[bind_key("notify_health", "service_domain")]
+    service = TEST_BINDINGS[bind_key("notify_health", "service")]
+    c.hass.services = FakeServices([(domain, service)])
     r = c._read_source(sp)
     assert r["disposition"] == DISP_OK
     assert r["integrity"] == "ok"
@@ -514,4 +536,5 @@ def test_an_unregistered_notify_service_is_degraded_and_says_which():
     r = c._read_source(sp)
     assert r["disposition"] == DISP_OK, "the read worked; the subject is the fault"
     assert r["integrity"] == "degraded"
-    assert sp["service"] in r["integrity_detail"]
+    assert TEST_BINDINGS[bind_key("notify_health", "service")] \
+        in r["integrity_detail"]

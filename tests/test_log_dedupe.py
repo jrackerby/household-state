@@ -163,6 +163,11 @@ def _perimeter_hass(states):
     )
 
 
+# GH #16: the perimeter label is configuration now. Bound here so these tests
+# exercise the condition they are about — a member that cannot be read — and
+# not `unbound`, which is a different condition and a WARNING (LAW §15).
+_BINDINGS = {"perimeter.label": "fls_device"}
+
 PERIMETER_SPEC = {
     "key": "perimeter_open",
     "name": "Perimeter Open, Sustained",
@@ -192,7 +197,7 @@ def test_the_live_boot_sequence_produces_exactly_one_line(caplog):
     throughout — one log line, and the live count stays where a dashboard
     reads it, on the reading."""
     hass = _perimeter_hass({})
-    c = HouseholdStateCoordinator(hass, 5)
+    c = HouseholdStateCoordinator(hass, 5, _BINDINGS)
     c.async_arm_logging()
 
     closed = FakeState("off")
@@ -214,7 +219,7 @@ def test_the_live_boot_sequence_produces_exactly_one_line(caplog):
 
 def test_the_contacts_coming_back_logs_the_recovery(caplog):
     hass = _perimeter_hass({})
-    c = HouseholdStateCoordinator(hass, 5)
+    c = HouseholdStateCoordinator(hass, 5, _BINDINGS)
     c.async_arm_logging()
     closed = FakeState("off")
     with caplog.at_level(logging.DEBUG, logger="household_state.coordinator"):

@@ -47,6 +47,8 @@ import ha_stubs  # noqa: E402
 ha_stubs.install()
 
 from household_state.const import (  # noqa: E402
+    BINDABLE,
+    DISP_ABSENT,
     AXIS_STAGE,
     BOIL_ADVISORY_SEV,
     DISP_OK,
@@ -60,6 +62,8 @@ from household_state.const import (  # noqa: E402
 from household_state.resolver import band_for, stage_for  # noqa: E402
 
 ROW = next(s for s in SOURCES if s["key"] == "boil_water")
+# GH #16: SOURCES ships no estate ids, so the suite names its own.
+_BOIL_ENTITY = "binary_sensor.test_boil_water_advisory"
 
 
 class _State:
@@ -85,15 +89,44 @@ def read(state):
     """Run the REAL coordinator read for this row against a stubbed state."""
     from household_state.coordinator import HouseholdStateCoordinator as C
 
-    mapping = {} if state is None else {ROW["entity_id"]: _State(state)}
+    mapping = {} if state is None else {_BOIL_ENTITY: _State(state)}
     inst = C.__new__(C)
     inst.hass = _Hass(mapping)
     inst._warn_once = lambda *a, **k: None
     # GH #16: _read_source resolves its entity through the binding map, so a
     # hand-built instance carries one. Empty means "no override", which is
     # what every case here wants: the SOURCES row's own default.
+    inst._bindings = {ROW["key"] + ".entity_id": _BOIL_ENTITY}
+    return C._read_source(inst, ROW)
+
+
+def C_read_unbound():
+    """The row with nothing bound to it."""
+    from household_state.coordinator import HouseholdStateCoordinator as C
+
+    inst = C.__new__(C)
+    inst.hass = _Hass({})
+    inst._warn_once = lambda *a, **k: None
     inst._bindings = {}
     return C._read_source(inst, ROW)
+
+
+def both_axes_read_one_entity():
+    """Bind the stage row and the directive row to the SAME entity and confirm
+    each reads it — the arrangement GH-583 built, expressed as behaviour now
+    that it is no longer expressible as a shared literal."""
+    from household_state.coordinator import HouseholdStateCoordinator as C
+
+    directive_row = next(s for s in SOURCES if s["key"] == "boil_water_directive")
+    inst = C.__new__(C)
+    inst.hass = _Hass({_BOIL_ENTITY: _State("on")})
+    inst._warn_once = lambda *a, **k: None
+    inst._bindings = {
+        "boil_water.entity_id": _BOIL_ENTITY,
+        "boil_water_directive.entity_id": _BOIL_ENTITY,
+    }
+    return (C._read_source(inst, ROW)["entity_id"] == _BOIL_ENTITY
+            and C._read_source(inst, directive_row)["entity_id"] == _BOIL_ENTITY)
 
 
 # (label, callable, expected)
@@ -101,14 +134,33 @@ CASES = [
     # ---- wiring -----------------------------------------------------
     ("row is on the STAGE axis, not DIRECTIVE",
      lambda: ROW["axis"], AXIS_STAGE),
-    ("row reads the address-matched entity, not the system-wide one",
-     lambda: ROW["entity_id"],
-     "binary_sensor.ucw_boil_water_advisory_affects_home"),
+    # GH #16: WHICH advisory entity this reads is a binding now, so the old
+    # assertion (a literal id) has nothing left to compare. It is NOT dropped
+    # and it is NOT weakened to None == None, which would pass over anything:
+    # the requirement it encoded — bind the ADDRESS-MATCHED advisory, never
+    # the system-wide one — is now a deployment decision the README states,
+    # and what code can still guarantee is that the row is bindable at all.
+    ("the row carries no hardcoded entity, so an installation binds it",
+     lambda: ROW["entity_id"], None),
+    ("the row is offered in the options flow, or it could never be bound",
+     lambda: any(k == "boil_water" and f == "entity_id"
+                 for k, f, _d, _l in BINDABLE), True),
+    ("an unbound advisory is absent, never a quiet clear",
+     lambda: C_read_unbound()["disposition"], DISP_ABSENT),
+    ("an unbound advisory carries no severity",
+     lambda: C_read_unbound()["severity"], None),
     ("directive axis now carries CAP plus this one hazard source",
      lambda: len([s for s in SOURCES if s["axis"] == "directive"]), 2),
-    ("the hazard directive row names the same entity as the stage row",
-     lambda: next(s for s in SOURCES if s["key"] == "boil_water_directive")
-     ["entity_id"], ROW["entity_id"]),
+    # Both rows are bound INDEPENDENTLY on purpose: one advisory on two axes
+    # is this estate's arrangement, not a law of the component, and another
+    # household may legitimately have separate sources. What must hold is that
+    # each is bindable, and that binding both to one entity really does put
+    # the same advisory on both axes.
+    ("the directive row is separately bindable",
+     lambda: any(k == "boil_water_directive" and f == "entity_id"
+                 for k, f, _d, _l in BINDABLE), True),
+    ("bound to one entity, both rows read that entity",
+     lambda: both_axes_read_one_entity(), True),
 
     # ---- severity ---------------------------------------------------
     ("advisory on -> configured severity",

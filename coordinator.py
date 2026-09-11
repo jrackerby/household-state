@@ -47,7 +47,12 @@ _BAD_STATES = ("unavailable", "unknown", "none", "")
 # source that is merely unreadable right now. These log at WARNING; every
 # other token logs at INFO, per the quality scale's log-when-unavailable.
 _DEFECT_STATES = frozenset(
-    {"missing", "label_absent", "label_empty", "unparsed", "registry_error"}
+    {"missing", "label_absent", "label_empty", "unparsed", "registry_error",
+     # GH #16. An unbound source needs somebody to fill in the options form.
+     # LAW §15 splits log level on WHO ACTS: nobody waits this out, so it is a
+     # warning like every other condition that needs an edit — not the INFO
+     # this integration uses when it is merely reporting on its own subject.
+     "unbound"}
 )
 
 
@@ -202,6 +207,24 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             "detail": None,
             "disposition": DISP_ABSENT,
         }
+
+        if eid is None and spec["kind"] not in ("perimeter", "config_entries",
+                                                "notify_health"):
+            # GH #16. "You have not told me where to look" is a different fact
+            # from "the entity you named is gone" (LAW §11: absent and
+            # unreachable do not collapse, and neither do these). Both are
+            # ABSENT on the axis — an unbound source must never read as a
+            # quiet zero — but the detail and the log token differ, because
+            # only one of them is fixed by editing the entity and the other by
+            # filling in the options form. The three kinds excluded here read
+            # no entity of their own and report their own unbound state below.
+            base["detail"] = "not configured: bind " + spec["key"] + ".entity_id"
+            self._warn_once(
+                spec["key"], "unbound",
+                spec["key"] + " has no entity bound (Configure -> "
+                + spec["key"] + ".entity_id)",
+            )
+            return base
 
         if spec["kind"] == "perimeter":
             # The one row with no entity_id. Dispatched before the state
@@ -360,12 +383,18 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         the source cannot be read, so an unreadable sleep_mode never
         silently claims the house is NOT quiet."""
         quiet_entity = self._bound(BIND_QUIET, "entity_id", QUIET_SOURCE_ENTITY)
-        st = self.hass.states.get(quiet_entity)
         base = {
             "quiet": None,
             "quiet_source_entity_id": quiet_entity,
             "quiet_raw_state": None,
         }
+        if quiet_entity is None:
+            self._warn_once(
+                "quiet", "unbound",
+                "QUIET has no entity bound (Configure -> quiet.entity_id)",
+            )
+            return base
+        st = self.hass.states.get(quiet_entity)
         if st is None:
             self._warn_once(
                 "quiet",
@@ -404,6 +433,8 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         """
         try:
             wanted = self._perimeter_label()
+            if wanted is None:
+                return None
             lreg = lr.async_get(self.hass)
             label = lreg.async_get_label(wanted)
             if label is None:
@@ -445,6 +476,13 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
            visibility; only a negative one does.
         """
         label = self._perimeter_label()
+        if label is None:
+            base["detail"] = "not configured: bind perimeter.label"
+            self._warn_once(
+                spec["key"], "unbound",
+                "perimeter has no label bound (Configure -> perimeter.label)",
+            )
+            return base
         ents = self._perimeter_entity_ids()
         if ents is None:
             base["disposition"] = DISP_ABSENT
@@ -650,6 +688,16 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         # which drives this path against a hass that cannot answer.
         domain = self._bound(spec["key"], "service_domain", spec.get("service_domain"))
         service = self._bound(spec["key"], "service", spec.get("service"))
+        if domain is None or service is None:
+            base["detail"] = (
+                "not configured: bind notify_health.service_domain and .service"
+            )
+            self._warn_once(
+                spec["key"], "unbound",
+                "notify path has no service bound (Configure -> "
+                "notify_health.service_domain / .service)",
+            )
+            return base
         try:
             exists = self.hass.services.has_service(domain, service)
         except Exception as exc:  # noqa: BLE001 — RULE 1

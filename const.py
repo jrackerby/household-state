@@ -27,7 +27,7 @@ or disposition moved.
 0.5.0 — 2026-08-22, Joel. Renamed household_alert -> household_state: the
 domain had stopped describing the scope once QUIET (a household activity
 modifier, not a threat) joined STAGE/DIRECTIVE/INTEGRITY. Same change adds
-QUIET itself — a read-only binary_sensor mirroring input_boolean.sleep_mode
+QUIET itself — a read-only binary_sensor mirroring the bound sleep-mode helper
 (binary_sensor.py's Quiet class). READ-ONLY, DELIBERATELY: no axis or
 notification path is suppressed or rerouted by it yet; that is a separate,
 future ruling. Kept OUT of SOURCES below on purpose — SOURCES feeds the
@@ -37,7 +37,7 @@ aggregation machinery, which it was never meant to pass through.
 
 0.3.0 — KAN-208. DIRECTIVE stops being a placeholder and becomes an
 axis with a real source and a real disposition model. The CAP `response`
-field is projected onto sensor.nws_union_threat as raw pairs; the
+field is projected onto the bound CAP sensor as raw pairs; the
 vocabulary map and the suppression list live here, and the resolution
 lives in resolver.py where it can be tested.
 
@@ -46,7 +46,7 @@ lives in resolver.py where it can be tested.
     with a 5-minute dwell). It is resolved from the fls_device LABEL at
     runtime, never from a pinned id list.
   * THE FLS TAMPER PAIR BECOMES ITS OWN INTEGRITY ROW. §7.3 has always
-    specified two sources on sensor.fls_device_status — device liveness
+    specified two sources on the FLS health sensor — device liveness
     and perimeter tamper. 0.1.0 read tamper_integrity into a key nothing
     consumed, which is the same defect in a quieter costume.
   * NO DRIVER IS NAMED AT SEVERITY 0. The tiebreak loop named whichever
@@ -159,7 +159,7 @@ VERSION = _manifest_version()
 
 # 0.5.0. QUIET's one source — see the module docstring for why it is a
 # read-only mirror and not a SOURCES row.
-QUIET_SOURCE_ENTITY = "input_boolean.sleep_mode"
+QUIET_SOURCE_ENTITY = None      # bind: quiet.entity_id
 
 # Every source is a state-machine read — the state machine, the entity
 # and config-entry registries, the service registry — with no network
@@ -312,7 +312,7 @@ DIRECTIVE_EVENT_MAP = {
 # clears teaches everyone to ignore red.
 #
 # IT STILL REACHES GLASS, AND THAT WAS THE POINT OF THE RULING. STW
-# carries severity 5 in nws_union_threat's own map, so it drives STAGE
+# carries severity 5 in the threat sensor's own map, so it drives STAGE
 # to critical on its own. What is suppressed is the closet instruction,
 # not the alert.
 #
@@ -357,7 +357,7 @@ CAP_ABSENT = "__absent__"
 # NAME second. Jinja's label_entities() accepts either, so this file
 # must not encode a guess about which one it is.
 # ---------------------------------------------------------------------
-PERIMETER_LABEL = "fls_device"
+PERIMETER_LABEL = None          # bind: perimeter.label
 
 # ------------------------------------------------------------------ BINDINGS
 #
@@ -477,7 +477,7 @@ PERIMETER_OPEN_STATES = {"binary_sensor": "on", "cover": "open"}
 # packages/home_posture.yaml is frozen and still references it. Re-add
 # this row only when that sensor has a live NC agency input again.
 #
-# TWO ROWS SHARE sensor.fls_device_status ON THE INTEGRITY AXIS, and
+# TWO ROWS SHARE ONE FLS SENSOR ON THE INTEGRITY AXIS, and
 # that is §7.3's shape rather than a duplicate. Each row names its own
 # (integrity_attr, detail_attr, affected_attr) triple, so a third
 # integrity signal on the same entity is one more row and no code.
@@ -486,28 +486,28 @@ SOURCES = (
     {
         "key": "nws_union",
         "name": "NWS Union",
-        "entity_id": "sensor.nws_union_threat",
+        "entity_id": None,          # bind: nws_union.entity_id
         "kind": "severity_attr",
         "axis": AXIS_STAGE,
     },
     {
         "key": "ntas",
         "name": "NTAS Advisory",
-        "entity_id": "sensor.ntas_advisory_level",
+        "entity_id": None,          # bind: ntas.entity_id
         "kind": "severity_attr",
         "axis": AXIS_STAGE,
     },
     {
         "key": "space_weather",
         "name": "Space Weather",
-        "entity_id": "sensor.swpc_space_weather",
+        "entity_id": None,          # bind: space_weather.entity_id
         "kind": "severity_attr",
         "axis": AXIS_STAGE,
     },
     {
         "key": "alarm",
         "name": "Alarm",
-        "entity_id": "alarm_control_panel.alarmo",
+        "entity_id": None,          # bind: alarm.entity_id
         "kind": "alarm",
         "axis": AXIS_STAGE,
     },
@@ -536,14 +536,14 @@ SOURCES = (
         # arriving here for free because the producer refuses to guess.
         "key": "boil_water",
         "name": "Boil Water Advisory",
-        "entity_id": "binary_sensor.ucw_boil_water_advisory_affects_home",
+        "entity_id": None,          # bind: boil_water.entity_id
         "kind": "binary_hazard",
         "axis": AXIS_STAGE,
         "severity_when_on": BOIL_ADVISORY_SEV,
     },
     {
         # THE SAME ENTITY ON A SECOND AXIS, which is the shape §7.3 already
-        # uses for sensor.fls_device_status rather than a duplicate: one
+        # uses for the FLS sensor rather than a duplicate: one
         # fact the household needs stated two ways. The STAGE row above
         # elevates the house and names the driver; this row produces the
         # INSTRUCTION, because "boil your water" is a thing to do and the
@@ -560,7 +560,7 @@ SOURCES = (
         # friendly names that no surface can tell apart. That is GH-565's
         # defect exactly, and 0.7.0 shipped it here before this fix.
         "name": "Boil Water Directive",
-        "entity_id": "binary_sensor.ucw_boil_water_advisory_affects_home",
+        "entity_id": None,          # bind: boil_water_directive.entity_id
         "kind": "binary_hazard",
         "axis": AXIS_DIRECTIVE,
         "severity_when_on": BOIL_ADVISORY_SEV,
@@ -585,7 +585,7 @@ SOURCES = (
         # sensor stays awareness-only, same as it always was on STAGE.
         "key": "nws_cap",
         "name": "CAP Directive",
-        "entity_id": "sensor.nws_union_threat",
+        "entity_id": None,          # bind: nws_cap.entity_id
         "kind": "cap",
         "axis": AXIS_DIRECTIVE,
         "pairs_attr": "cap_responses",
@@ -594,7 +594,7 @@ SOURCES = (
     # THREE CATEGORIES, NOT FIVE (KAN-343, Joel, 2026-08-19; supersedes the
     # 0.2.0/0.15 five-row layout above). The old rows were named after
     # WHICH ATTRIBUTE PAIR a check happened to live on
-    # (sensor.fls_device_status's integrity/tamper_integrity/
+    # (the FLS sensor's integrity/tamper_integrity/
     # detector_integrity/lock_integrity/sensor_integrity), not after what an
     # operator actually needs to go and act on. Joel's ruling regroups by
     # ACTION: fire, break-in, or "the network/server is down" are three
@@ -610,7 +610,7 @@ SOURCES = (
     # change here. This file only names which ATTRIBUTE TRIPLE on which
     # ENTITY answers for a category; it does not itself enumerate devices.
     #
-    # STILL TWO ROWS SHARING sensor.fls_device_status, same shape §7.3 has
+    # STILL TWO ROWS SHARING ONE FLS SENSOR, same shape §7.3 has
     # always used: each names its own (integrity_attr, detail_attr,
     # affected_attr) triple, so a fourth category on the same entity is one
     # more row and no new code.
@@ -634,7 +634,7 @@ SOURCES = (
         # answers which piece and how each member set is discovered.
         "key": "fire_life_safety",
         "name": "Fire Life Safety Device Health",
-        "entity_id": "sensor.fls_device_status",
+        "entity_id": None,          # bind: fire_life_safety.entity_id
         "kind": "fls",
         "axis": AXIS_INTEGRITY,
         "integrity_attr": "fire_life_safety_integrity",
@@ -654,7 +654,7 @@ SOURCES = (
         # tier() call.
         "key": "security_device_health",
         "name": "Security Device Health",
-        "entity_id": "sensor.fls_device_status",
+        "entity_id": None,          # bind: security_device_health.entity_id
         "kind": "fls",
         "axis": AXIS_INTEGRITY,
         "integrity_attr": "security_integrity",
@@ -688,7 +688,7 @@ SOURCES = (
         # traffic -- so it stayed in that tier rather than standing in here.
         "key": "critical_networking_device_health",
         "name": "Critical Networking Device Health",
-        "entity_id": "sensor.critical_networking_device_health",
+        "entity_id": None,          # bind: critical_networking_device_health.entity_id
         "kind": "fls",
         "axis": AXIS_INTEGRITY,
         "integrity_attr": "integrity",
@@ -756,9 +756,9 @@ SOURCES = (
         "entity_id": None,
         "kind": "notify_health",
         "axis": AXIS_INTEGRITY,
-        "service_domain": "notify",
-        "service": "mobile_app_joels_iphone",
-        "last_sent_entity_id": "notify.joels_iphone",
+        "service_domain": None,     # bind: notify_health.service_domain
+        "service": None,            # bind: notify_health.service
+        "last_sent_entity_id": None,  # bind: notify_health.last_sent_entity_id
     },
 )
 

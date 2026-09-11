@@ -56,6 +56,8 @@ from household_state.const import (  # noqa: E402
 )
 
 ALARM_ROW = next(s for s in SOURCES if s["key"] == "alarm")
+# GH #16: SOURCES ships no estate ids, so the suite names its own.
+_ALARM_ENTITY = "alarm_control_panel.test_panel"
 PERIM_ROW = next(s for s in SOURCES if s["key"] == "perimeter_open")
 
 # Real ids off this estate's `fls_device` label, warts intact. The stutter
@@ -109,7 +111,9 @@ def read_perimeter(members, sustained_ids):
     # GH #16: _read_source resolves its entity through the binding map, so a
     # hand-built instance carries one. Empty means "no override", which is
     # what every case here wants: the SOURCES row's own default.
-    inst._bindings = {}
+    # GH #16: entity and label are configuration now, so a hand-built
+    # instance must say what it binds or every row reports `unbound`.
+    inst._bindings = {"perimeter.label": "fls_device"}
     inst._perimeter_entity_ids = lambda: list(members)
     inst._mark = lambda key, state: (
         old if key.split(":", 1)[1] in sustained_ids else fresh
@@ -134,10 +138,10 @@ def read_alarm(state, open_sensors):
 
     inst = C.__new__(C)
     inst.hass = _Hass(
-        {ALARM_ROW["entity_id"]: _State(state, {"open_sensors": open_sensors})}
+        {_ALARM_ENTITY: _State(state, {"open_sensors": open_sensors})}
     )
     inst._warn_once = lambda *a, **k: None
-    inst._bindings = {}
+    inst._bindings = {"alarm.entity_id": _ALARM_ENTITY}
     return C._read_source(inst, ALARM_ROW)
 
 
