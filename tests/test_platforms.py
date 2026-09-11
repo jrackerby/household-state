@@ -36,6 +36,11 @@ class FakeCoordinator:
     def __init__(self, data=None):
         self.data = data
 
+    def slug_for(self, spec):
+        """GH #19: the published slug. Defaults to the key, which is what
+        every case here wants — nothing is rebound."""
+        return spec["key"]
+
 
 class FakeEntry:
     def __init__(self, data=None):
@@ -109,7 +114,7 @@ def test_an_empty_coordinator_publishes_none_not_a_crash(data):
 def test_the_stage_sensor_publishes_its_axis_and_dwell_state():
     data = {
         "stage": "elevated", "severity": 3, "raw_severity": 5, "band": "Elevated",
-        "driver": "nws_union", "detail": "Flood Warning", "confidence": "partial",
+        "driver": "local_nws", "detail": "Flood Warning", "confidence": "partial",
         "sources_total": 5, "sources_healthy": 4, "sources_unhealthy": ["ntas"],
         "fall_dwell_holding": True, "fall_dwell_since": "2026-09-11T08:00:00+00:00",
         "stage_since": "2026-09-11T07:00:00+00:00",
@@ -119,7 +124,7 @@ def test_the_stage_sensor_publishes_its_axis_and_dwell_state():
     attrs = ent.extra_state_attributes
     assert attrs["severity"] == 3
     assert attrs["raw_severity"] == 5
-    assert attrs["driver"] == "nws_union"
+    assert attrs["driver"] == "local_nws"
     assert attrs["fall_dwell_holding"] is True
     # `since` is read off stage_since, not off a key called `since`.
     assert attrs["since"] == "2026-09-11T07:00:00+00:00"

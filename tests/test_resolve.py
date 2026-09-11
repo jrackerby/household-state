@@ -70,7 +70,7 @@ def integrity(key, disposition=DISP_OK, verdict=INTEGRITY_OK, detail=None,
 # ============================================================ STAGE, RULE 2
 
 def test_all_healthy_and_idle_is_normal():
-    out = resolve([stage("alarm", 0), stage("nws_union", 0)])
+    out = resolve([stage("alarm", 0), stage("local_nws", 0)])
     assert out["severity"] == 0
     assert out["stage"] == STAGE_NORMAL
     assert out["band"] == BAND_CLEAR
@@ -82,7 +82,7 @@ def test_an_unhealthy_source_can_never_contribute_zero():
     we cannot see all of them, so we do not get to say Normal."""
     out = resolve([
         stage("alarm", 0),
-        stage("nws_union", None, disposition=DISP_UNKNOWN),
+        stage("local_nws", None, disposition=DISP_UNKNOWN),
     ])
     assert out["severity"] is None
     assert out["stage"] == STAGE_UNKNOWN
@@ -112,18 +112,18 @@ def test_a_positive_severity_survives_a_partial_source_set():
     not a complete picture, and confidence says so rather than withholding it."""
     out = resolve([
         stage("alarm", 6),
-        stage("nws_union", None, disposition=DISP_UNKNOWN),
+        stage("local_nws", None, disposition=DISP_UNKNOWN),
     ])
     assert out["severity"] == 6
     assert out["stage"] == STAGE_CRITICAL
     assert out["confidence"] == "partial"
-    assert out["sources_unhealthy"] == ["nws_union"]
+    assert out["sources_unhealthy"] == ["local_nws"]
 
 
 def test_the_highest_healthy_severity_wins():
-    out = resolve([stage("alarm", 2), stage("nws_union", 5), stage("ntas", 1)])
+    out = resolve([stage("alarm", 2), stage("local_nws", 5), stage("ntas", 1)])
     assert out["severity"] == 5
-    assert out["driver"] == "nws_union"
+    assert out["driver"] == "local_nws"
 
 
 def test_a_tie_is_broken_by_tiebreak_order_not_by_input_order():
@@ -145,7 +145,7 @@ def test_a_source_outside_tiebreak_is_not_scored():
 def test_nothing_is_named_at_zero():
     """LAW §11: name nothing at zero. A driver at severity 0 is a name with no
     finding behind it."""
-    out = resolve([stage("alarm", 0), stage("nws_union", 0)])
+    out = resolve([stage("alarm", 0), stage("local_nws", 0)])
     assert out["driver"] is None
     assert out["detail"] == "no active local, state, weather, or perimeter threats"
 
@@ -153,7 +153,7 @@ def test_nothing_is_named_at_zero():
 def test_the_unresolvable_detail_counts_what_it_could_not_read():
     out = resolve([
         stage("alarm", None, disposition=DISP_UNKNOWN),
-        stage("nws_union", None, disposition=DISP_ABSENT),
+        stage("local_nws", None, disposition=DISP_ABSENT),
         stage("ntas", 0),
     ])
     assert out["driver"] is None
@@ -186,9 +186,9 @@ def test_the_band_boundaries(severity, expected_stage, expected_band):
 def test_a_healthy_row_carrying_no_severity_is_skipped_not_scored_as_zero():
     """`severity is None` on a healthy row means the row has nothing to say,
     which is not the same as saying nought."""
-    out = resolve([stage("alarm", None), stage("nws_union", 3)])
+    out = resolve([stage("alarm", None), stage("local_nws", 3)])
     assert out["severity"] == 3
-    assert out["driver"] == "nws_union"
+    assert out["driver"] == "local_nws"
 
 
 # ============================================================== INTEGRITY
@@ -317,7 +317,7 @@ def test_the_stage_detail_is_not_overwritten_by_the_breakdown_loop():
 def test_the_counts_describe_only_their_own_axis():
     out = resolve([
         stage("alarm", 0),
-        stage("nws_union", None, disposition=DISP_UNKNOWN),
+        stage("local_nws", None, disposition=DISP_UNKNOWN),
         integrity("fls", verdict=INTEGRITY_OK),
         {"key": "cap", "name": "CAP", "axis": AXIS_DIRECTIVE,
          "disposition": DISP_OK, "severity": None, "raw_state": None,
@@ -325,7 +325,7 @@ def test_the_counts_describe_only_their_own_axis():
     ])
     assert out["sources_total"] == 2
     assert out["sources_healthy"] == 1
-    assert out["sources_unhealthy"] == ["nws_union"]
+    assert out["sources_unhealthy"] == ["local_nws"]
     assert out["integrity_sources"] == 1
     assert out["directive_sources"] == 1
 
@@ -360,7 +360,7 @@ def test_the_assertions_can_fail():
     # RULE 2 must actually depend on the unhealthy row being there.
     assert resolve([stage("alarm", 0)])["severity"] == 0
     assert resolve([
-        stage("alarm", 0), stage("nws_union", None, disposition=DISP_UNKNOWN)
+        stage("alarm", 0), stage("local_nws", None, disposition=DISP_UNKNOWN)
     ])["severity"] is None
     # The tiebreak must actually depend on TIEBREAK order, not input order.
     assert resolve([stage("ntas", 4), stage("alarm", 4)])["driver"] == "alarm"

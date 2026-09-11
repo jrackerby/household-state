@@ -41,7 +41,7 @@ severity is read. Which entity supplies it is yours to say.
 
 | option | binds | domain |
 |---|---|---|
-| `nws_union.entity_id` | local NWS threat sensor (STAGE) | `sensor` |
+| `local_nws.entity_id` | local NWS threat sensor (STAGE) | `sensor` |
 | `nws_cap.entity_id` | CAP directive sensor (DIRECTIVE) | `sensor` |
 | `ntas.entity_id` | NTAS advisory level | `sensor` |
 | `space_weather.entity_id` | space weather | `sensor` |
@@ -62,10 +62,25 @@ binding falls through to the row's own default; an id that does not resolve
 reports `absent`, loudly, because a source this layer cannot read must never
 read as a quiet zero.
 
-Two rows may share one entity on purpose — `nws_union` and `nws_cap` read the
+Two rows may share one entity on purpose — `local_nws` and `nws_cap` read the
 same threat sensor on different axes, as do the two boil-water rows, and the
 fire/life-safety and security rows are told apart only by which attribute
 triple they read. Bind them independently.
+
+### Keeping a published id across a rename (advanced)
+
+Each source also accepts a `<source>.slug` override. **A fresh install should
+leave every one of these blank.**
+
+It exists for one situation. A source's key becomes the tail of its entity's
+unique id — `sensor.household_state_<slug>` — so if a key is ever renamed in a
+release, Home Assistant mints a *new* entity and orphans the old one, because
+it never reclaims an id. Every dashboard still reading the old id would then be
+reading something that belongs to nothing.
+
+Binding the slug to the previous key keeps the published id exactly where it
+was. The stage sensor's `driver` attribute reports the same slug, so a surface
+that joins `driver` to a per-source entity keeps matching.
 
 ## One rule worth not breaking
 

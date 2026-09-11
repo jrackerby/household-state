@@ -225,7 +225,10 @@ def resolve(readings):
                 continue
             if top is None or sev > top:
                 top = sev
-                driver = r["key"]
+                # GH #19: the PUBLISHED identity, not the internal key. A
+                # surface reading `driver` matches it against the source
+                # entity it also renders, and those must agree.
+                driver = r.get("slug") or r["key"]
                 detail = r["detail"] or r["raw_state"]
 
     if top is None:
@@ -281,12 +284,12 @@ def resolve(readings):
 
     if unknown_rows:
         integ_state = INTEGRITY_UNKNOWN
-        integ_driver = unknown_rows[0]["key"]
+        integ_driver = unknown_rows[0].get("slug") or unknown_rows[0]["key"]
         integ_detail = "cannot read " + str(len(unknown_rows)) + " integrity source(s)"
         integ_affected = len(unknown_rows)
     elif degraded_rows:
         integ_state = INTEGRITY_DEGRADED
-        integ_driver = degraded_rows[0]["key"]
+        integ_driver = degraded_rows[0].get("slug") or degraded_rows[0]["key"]
         integ_detail = degraded_rows[0].get("integrity_detail") or "degraded"
         integ_affected = sum(int(r.get("affected") or 0) for r in degraded_rows)
 

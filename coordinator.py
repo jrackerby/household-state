@@ -32,6 +32,7 @@ from .const import (
     PERIMETER_OPEN_STATES,
     PERIMETER_SEV,
     QUIET_SOURCE_ENTITY,
+    SLUG_FIELD,
     SOURCES,
     STORE_KEY,
     bind_key,
@@ -110,6 +111,17 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
     def _spec_entity(self, spec: dict):
         """The entity a SOURCES row reads, after binding."""
         return self._bound(spec["key"], "entity_id", spec.get("entity_id"))
+
+    def slug_for(self, spec: dict) -> str:
+        """The row's PUBLISHED identity: the tail of its entity's unique_id and
+        the token the stage sensor names as its driver.
+
+        Defaults to the key. Bindable because renaming a key would otherwise
+        mint a new entity and orphan the one an installation already publishes
+        (GH #19) — HA never reclaims an id, so the rename would be visible on
+        every dashboard reading the old one.
+        """
+        return self._bound(spec["key"], SLUG_FIELD, spec["key"])
 
     async def async_load_ages(self) -> None:
         """RULE 5. Must run BEFORE the first refresh, or every age
@@ -198,6 +210,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         eid = self._spec_entity(spec)
         base = {
             "key": spec["key"],
+            "slug": self.slug_for(spec),
             "name": spec["name"],
             "entity_id": eid,
             "axis": spec["axis"],

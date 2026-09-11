@@ -37,6 +37,11 @@ class _Coordinator:
     def __init__(self, reading):
         self.data = {"readings": {"row": reading}} if reading is not None else None
 
+    def slug_for(self, spec):
+        """GH #19: the published slug. Defaults to the key, which is what every
+        case here wants — nothing is rebound."""
+        return spec["key"]
+
 
 def _sensor(reading):
     return SourceSensor(_Coordinator(reading), "entry", {"key": "row", "name": "Row"})

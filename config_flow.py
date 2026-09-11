@@ -13,6 +13,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     bind_key,
+    slug_bindings,
 )
 
 
@@ -62,7 +63,7 @@ class HouseholdStateOptionsFlow(config_entries.OptionsFlow):
         for source_key, field, _domain, label in BINDABLE:
             key = bind_key(source_key, field)
             schema[vol.Optional(key, description={"suggested_value": options.get(key)})] = str
-        for source_key, field, label in BINDABLE_TEXT:
+        for source_key, field, label in BINDABLE_TEXT + slug_bindings():
             key = bind_key(source_key, field)
             schema[vol.Optional(key, description={"suggested_value": options.get(key)})] = str
 

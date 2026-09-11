@@ -381,7 +381,7 @@ BIND_QUIET = "quiet"
 BIND_PERIMETER = "perimeter"
 
 BINDABLE = (
-    ("nws_union", "entity_id", "sensor", "Local NWS threat sensor"),
+    ("local_nws", "entity_id", "sensor", "Local NWS threat sensor"),
     ("ntas", "entity_id", "sensor", "NTAS advisory level sensor"),
     ("space_weather", "entity_id", "sensor", "Space weather sensor"),
     ("alarm", "entity_id", "alarm_control_panel", "Alarm panel"),
@@ -405,6 +405,27 @@ BINDABLE_TEXT = (
     ("notify_health", "service", "Notify service name"),
     (BIND_PERIMETER, "label", "Perimeter label"),
 )
+
+
+# THE PUBLISHED SLUG IS BINDABLE, AND THIS EXISTS FOR EXACTLY ONE REASON
+# (GH #19): a source row's key becomes the tail of its entity's unique_id, so
+# RENAMING A KEY MINTS A NEW ENTITY and orphans the old one — HA never reclaims
+# an id. An installation that has been running since before a rename would find
+# its dashboards reading an entity that now belongs to nothing.
+#
+# Binding the slug lets the repo carry a neutral key while an existing
+# installation keeps the id it already publishes. Almost nobody needs it: it
+# defaults to the key, and a fresh install should leave it alone.
+SLUG_FIELD = "slug"
+
+
+def slug_bindings():
+    """One optional slug override per source row."""
+    return tuple(
+        (spec["key"], SLUG_FIELD,
+         "Published id suffix for " + spec["name"] + " (advanced; leave blank)")
+        for spec in SOURCES
+    )
 
 
 def bind_key(source_key: str, field: str) -> str:
@@ -484,9 +505,9 @@ PERIMETER_OPEN_STATES = {"binary_sensor": "on", "cover": "open"}
 # ---------------------------------------------------------------------
 SOURCES = (
     {
-        "key": "nws_union",
-        "name": "NWS Union",
-        "entity_id": None,          # bind: nws_union.entity_id
+        "key": "local_nws",
+        "name": "Local NWS",
+        "entity_id": None,          # bind: local_nws.entity_id
         "kind": "severity_attr",
         "axis": AXIS_STAGE,
     },
@@ -768,7 +789,7 @@ SOURCES = (
 TIEBREAK = (
     "alarm",
     "perimeter_open",
-    "nws_union",
+    "local_nws",
     "ntas",
     "space_weather",
 )

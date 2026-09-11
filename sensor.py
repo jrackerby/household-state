@@ -179,7 +179,10 @@ class SourceSensor(_Base):
         super().__init__(coordinator, entry_id)
         self._key = spec["key"]
         self._attr_name = spec["name"]
-        self._attr_unique_id = entry_id + "_src_" + spec["key"]
+        # GH #19: the PUBLISHED slug, which defaults to the key. Binding it is
+        # what lets a key be renamed upstream without minting a new entity and
+        # orphaning the one this installation already publishes.
+        self._attr_unique_id = entry_id + "_src_" + coordinator.slug_for(spec)
 
     def _reading(self):
         d = self.coordinator.data or {}
