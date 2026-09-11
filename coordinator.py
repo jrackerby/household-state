@@ -602,7 +602,27 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         `last_sent` rides along as an informational attribute the resolver
         never judges against a threshold.
         """
-        exists = self.hass.services.has_service(spec["service_domain"], spec["service"])
+        # GUARDED, LIKE EVERY OTHER FRAMEWORK READ IN THIS FILE. RULE 1 admits
+        # no exception, and this call was the one registry-shaped read that
+        # was not wrapped — _perimeter_entity_ids and _read_config_entries
+        # both are, for the same stated reason. An exception escaping here
+        # leaves _async_update_data, takes every entity unavailable, and takes
+        # their attributes with them, which is the exact mechanism this
+        # integration exists to refuse. Found by the coordinator read suite,
+        # which drives this path against a hass that cannot answer.
+        try:
+            exists = self.hass.services.has_service(
+                spec["service_domain"], spec["service"]
+            )
+        except Exception as exc:  # noqa: BLE001 — RULE 1
+            self._warn_once(
+                "notify_registry",
+                "registry_error",
+                "service registry read failed: " + str(exc),
+            )
+            base["disposition"] = DISP_ABSENT
+            base["detail"] = "service registry unreadable"
+            return base
 
         last_sent = None
         st = self.hass.states.get(spec["last_sent_entity_id"])

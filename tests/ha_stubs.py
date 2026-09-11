@@ -141,6 +141,18 @@ def install() -> None:
             self.logger = logger
             self.name = name
             self.update_interval = update_interval
+            self.data = None
+
+        async def async_config_entry_first_refresh(self):
+            # Core's version raises ConfigEntryNotReady on failure. This one
+            # cannot, and that is faithful here rather than a shortcut: RULE 1
+            # means _async_update_data never raises, so the real call has no
+            # failure path to convert. That is also why `test-before-setup` is
+            # an exempt deviation in quality_scale.yaml.
+            self.data = await self._async_update_data()
+
+        async def async_refresh(self):
+            self.data = await self._async_update_data()
 
     class CoordinatorEntity:  # noqa: D101
         def __init__(self, coordinator):
@@ -176,6 +188,17 @@ def install() -> None:
         pass
 
     sensor_mod.SensorEntity = SensorEntity
+
+    binary_mod = mod("homeassistant.components.binary_sensor")
+
+    class BinarySensorEntity:  # noqa: D101
+        pass
+
+    class BinarySensorDeviceClass:  # noqa: D101
+        PROBLEM = "problem"
+
+    binary_mod.BinarySensorEntity = BinarySensorEntity
+    binary_mod.BinarySensorDeviceClass = BinarySensorDeviceClass
 
     mod("homeassistant.util")
     dt = mod("homeassistant.util.dt")
@@ -243,8 +266,43 @@ class _Label:
         self.label_id = label_id
 
 
+class FakeServices:
+    """`hass.services`, reduced to the one question this integration asks."""
+
+    def __init__(self, registered=()):
+        self._registered = {tuple(r) for r in registered}
+
+    def has_service(self, domain, service):
+        return (domain, service) in self._registered
+
+
+class FakeConfigEntries:
+    """`hass.config_entries`, reduced to the listing the integrity row reads."""
+
+    def __init__(self, entries=()):
+        self._entries = list(entries)
+
+    def async_entries(self):
+        return list(self._entries)
+
+
+class FakeConfigEntry:
+    def __init__(self, entry_id, domain="x", title="X", state="loaded",
+                 disabled_by=None):
+        self.entry_id = entry_id
+        self.domain = domain
+        self.title = title
+        self.state = state
+        self.disabled_by = disabled_by
+
+
 class FakeHass:
-    def __init__(self, states=None, entity_registry=None, label_registry=None):
+    def __init__(self, states=None, entity_registry=None, label_registry=None,
+                 services=None, config_entries=None):
         self.states = FakeStates(states)
         self.entity_registry = entity_registry or FakeEntityRegistry()
         self.label_registry = label_registry or FakeLabelRegistry()
+        self.services = services if services is not None else FakeServices()
+        self.config_entries = (
+            config_entries if config_entries is not None else FakeConfigEntries()
+        )

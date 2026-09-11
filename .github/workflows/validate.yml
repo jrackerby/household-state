@@ -88,8 +88,13 @@ jobs:
       # __init__.py, and any collection tree containing it makes a pytest
       # Package out of the root whose setup() imports that file as a top-level
       # module. tests/pytest.ini carries the long version.
+      # --cov-fail-under is the `test-coverage` rule made enforceable. The
+      # figure in quality_scale.yaml is otherwise self-reported, and a
+      # self-reported coverage number drifts the moment code lands faster than
+      # tests do -- which is exactly how this repo reached 49% without anyone
+      # noticing. 95 is the rule's own threshold, not a local preference.
       - name: pytest
-        run: ./tools/run_tests.sh -q
+        run: ./tools/run_tests.sh -q --cov=household_state --cov-fail-under=95
 
       # A gate that could not run is not a pass. `pytest -q` exits 0 on
       # "no tests ran", so an import or staging break that collects nothing

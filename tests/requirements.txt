@@ -13,3 +13,7 @@ PyYAML
 # config_flow.py builds its schemas with voluptuous, so exercising the flow
 # (the quality scale's config-flow-test-coverage) imports it for real.
 voluptuous
+# The quality scale's `test-coverage` rule wants above 95%. validate.yml fails
+# the build below that, so the measurement is a gate rather than a number
+# somebody re-derives by hand and writes into quality_scale.yaml.
+pytest-cov

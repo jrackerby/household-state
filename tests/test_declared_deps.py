@@ -26,7 +26,14 @@ REQUIREMENTS = HERE / "requirements.txt"
 
 # Modules the suite provides for itself, resolved from this directory or from
 # the staged package tree conftest.py builds. Not third-party, not stdlib.
-LOCAL = {"ha_stubs", "conftest", "household_state"}
+#
+# `homeassistant` is in here DELIBERATELY and is the interesting one: it is not
+# installed and must not be. ha_stubs.install() synthesises it into sys.modules
+# so the suite stays seconds long and a red result stays attributable to this
+# repo rather than to a core release moving under it (ha_stubs' docstring, and
+# validate.yml's tests job). Declaring it in requirements.txt would install the
+# real thing and silently undo that.
+LOCAL = {"ha_stubs", "conftest", "household_state", "homeassistant"}
 
 # Distribution name -> the module name it installs under, where they differ.
 DISTRIBUTION_MODULES = {"pyyaml": "yaml"}

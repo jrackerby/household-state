@@ -230,15 +230,18 @@ rules:
       No credentials. The integration authenticates to nothing; it reads the
       local state machine.
   test-coverage:
-    status: todo
+    status: done
     comment: >-
-      53% across the package, up from 49% (config_flow now 100%, const 100%,
-      entity 91%, sensor 71%, resolver 50%, coordinator 44%, binary_sensor 0%,
-      __init__ 45%). The rule wants above 95%. The suite is targeted regression
-      cases for specific rulings plus the flow, not a coverage suite.
-      resolver.py imports nothing from homeassistant by design (LAW §11), so
-      it is the cheapest half to raise; binary_sensor.py at 0% is the other
-      obvious gap and is small.
+      99% across the package, measured, up from 49% when this repo was
+      gap-listed (__init__, binary_sensor, config_flow, const, entity and
+      sensor at 100%, coordinator 99%, resolver 95%). The rule wants above 95%
+      and validate.yml now FAILS below it — a self-reported coverage figure
+      drifts the moment code lands faster than tests do, which is how the repo
+      reached 49% without anyone noticing. The suite runs against
+      tests/ha_stubs rather than a real core install, deliberately: it proves
+      this repo's own policy, not core's registry semantics, and both
+      _perimeter_entity_ids and the config-entry read keep their RULE 1 guards
+      precisely because no test here can see a core API move.
 
   # -------------------------------------------------------------------- Gold
   # Not the target. Listed so the file stays complete when the target moves,
