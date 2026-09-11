@@ -46,17 +46,32 @@ rules:
   brands:
     status: todo
     comment: >-
-      No brand assets in-repo and no accepted home-assistant/brands submission,
-      so `.github/workflows/validate.yml` ignores the HACS brands check —
-      until one of the two exists it can only ever fail. Closing this means
-      committing brand/icon.png the way nanit does.
+      BLOCKED ON #1, not on work in this repo. Assets now ship in-repo
+      (brand/icon.png 256, icon@2x.png 512, logo.png), which is what makes HA
+      render an icon for a custom integration — the practical effect the rule
+      exists to produce. The rule itself asks for an entry in
+      home-assistant/brands, and that is measurably absent: both
+      core_integrations/household_state and custom_integrations/household_state
+      are 404 (checked 2026-09-11). A submission needs this repo public, which
+      is #1. Status stays todo rather than done because the registry entry is
+      the rule and it does not exist; the HACS brands check stays ignored in
+      validate.yml for the same reason — it cannot pass for an unsubmitted
+      domain, so un-ignoring it would only turn CI red.
   common-modules: done
   config-flow: done
   config-flow-test-coverage:
-    status: todo
+    status: done
     comment: >-
-      config_flow.py sits at 0% — the suite does not exercise the flow at all.
-      The rule wants full coverage of that file.
+      config_flow.py at 100% (measured, `pytest --cov=household_state`).
+      tests/test_config_flow.py drives the single-instance abort, the empty
+      user schema, the options default read back off the entry, the inclusive
+      1-300 bound and the string coercion, and separately ties the
+      `single_instance_allowed` abort reason to translations/en.json — a
+      reason with no string behind it renders as a raw key and the flow
+      returns the key either way. It runs against tests/ha_stubs' flow bases,
+      so it proves this repo's flow logic and nothing about core's flow
+      manager; that trade is ha_stubs' standing one and is stated in both
+      files.
   dependency-transparency:
     status: done
     comment: >-
@@ -82,8 +97,14 @@ rules:
       README "Install" carries the HACS custom-repository route and the
       content_in_root layout note that makes it work.
   docs-removal-instructions:
-    status: todo
-    comment: README has no removal section.
+    status: done
+    comment: >-
+      README "Remove" covers deleting the entry and the HACS repository, and
+      carries the trap that actually bites: HA never reclaims an entity id, so
+      a reinstall lands `_2` suffixes while every dashboard and automation
+      keeps pointing at ids that now belong to nothing. This integration
+      already carries one live scar of exactly that (GH-565). Also states what
+      is NOT left behind, since it writes nothing outside its own ledger.
   docs-triggers:
     status: exempt
     comment: Registers no triggers.
@@ -107,11 +128,16 @@ rules:
       device name — sensor.household_state_stage, not
       sensor.household_state_stage_stage.
   runtime-data:
-    status: todo
+    status: done
     comment: >-
-      Still stores the coordinator in hass.data[DOMAIN][entry.entry_id] and
-      reads it back in both platforms' async_setup_entry. The rule wants
-      entry.runtime_data with a typed ConfigEntry alias.
+      The coordinator is assigned to entry.runtime_data and read back off the
+      entry in both platforms; hass.data is gone from shipped code entirely.
+      coordinator.py carries the typed alias
+      HouseholdStateConfigEntry = ConfigEntry[HouseholdStateCoordinator].
+      Plain assignment rather than a PEP 695 `type` statement, so the alias
+      evaluates on the interpreter the suite runs on as well as the one HA
+      requires — the rule is about where runtime data lives, not which alias
+      syntax declares it.
   test-before-configure:
     status: exempt
     comment: >-
@@ -152,11 +178,13 @@ rules:
       options-update listener and the async_at_started logging arm are both
       registered through entry.async_on_unload.
   docs-configuration-parameters:
-    status: todo
+    status: done
     comment: >-
-      README names `scan_interval` as the only option but documents neither its
-      default (3s), its accepted range (1-300), nor what it buys — the under-10s
-      STAGE latency GH-454 set it for.
+      README "Configuration" tables the one option with its default and range,
+      says why 3s is deliberate rather than arbitrary (every poll is a
+      state-machine read with no IO, so the interval is set by what a wall
+      display needs), and warns against raising it past the fall dwell, which
+      would make the dwell meaningless.
   docs-installation-parameters:
     status: exempt
     comment: >-
@@ -190,11 +218,12 @@ rules:
       defects that need a human edit (a missing entity, an unresolvable label,
       an unparseable attribute) stay WARNING.
   parallel-updates:
-    status: todo
+    status: done
     comment: >-
-      Neither sensor.py nor binary_sensor.py declares PARALLEL_UPDATES. Every
-      entity is coordinator-driven and read-only, so the correct declaration is
-      0 in both platforms — but the rule wants it explicit, and it is not.
+      PARALLEL_UPDATES = 0 declared in both platforms. Every entity is
+      coordinator-driven and read-only, so there is no per-entity update to
+      serialise and no device to overwhelm — the rule is about saying which it
+      is rather than leaving it to the default.
   reauthentication-flow:
     status: exempt
     comment: >-
@@ -203,11 +232,13 @@ rules:
   test-coverage:
     status: todo
     comment: >-
-      49% across the package (config_flow 0%, binary_sensor 0%, coordinator
-      44%, resolver 50%, sensor 70%); the rule wants above 95%. The 30 tests
-      that exist are targeted regression cases for specific rulings rather than
-      a coverage suite. resolver.py imports nothing from homeassistant by
-      design (LAW §11), so it is the cheapest half to raise.
+      53% across the package, up from 49% (config_flow now 100%, const 100%,
+      entity 91%, sensor 71%, resolver 50%, coordinator 44%, binary_sensor 0%,
+      __init__ 45%). The rule wants above 95%. The suite is targeted regression
+      cases for specific rulings plus the flow, not a coverage suite.
+      resolver.py imports nothing from homeassistant by design (LAW §11), so
+      it is the cheapest half to raise; binary_sensor.py at 0% is the other
+      obvious gap and is small.
 
   # -------------------------------------------------------------------- Gold
   # Not the target. Listed so the file stays complete when the target moves,

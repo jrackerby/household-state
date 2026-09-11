@@ -148,7 +148,14 @@ jobs:
           # repo had neither. Both are set now, so both are ENFORCED -- going
           # on ignoring a check that would pass is how a gate stops being one.
           #
-          # `brands` stays ignored: it needs either brand/icon.png committed
-          # here or an accepted PR against home-assistant/brands, and until one
-          # of those exists the check can only ever fail.
+          # `brands` stays ignored, and the reason has NARROWED. The assets
+          # exist now (brand/), which is what makes HA render an icon for a
+          # custom integration. What the HACS check actually reads is
+          # home-assistant/brands, where this domain is absent -- both
+          # core_integrations/household_state and
+          # custom_integrations/household_state 404 (measured 2026-09-11) --
+          # so the check still cannot pass, and un-ignoring it would only turn
+          # CI red. The submission needs this repo public: GH #1. Re-test this
+          # ignore the day that lands; an ignored check that would pass is how
+          # a gate stops being one.
           ignore: brands

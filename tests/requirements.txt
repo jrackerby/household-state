@@ -10,3 +10,6 @@
 # core the component imports, deliberately — see validate.yml's tests job.
 pytest
 PyYAML
+# config_flow.py builds its schemas with voluptuous, so exercising the flow
+# (the quality scale's config-flow-test-coverage) imports it for real.
+voluptuous

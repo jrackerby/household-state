@@ -8,15 +8,16 @@ surface consumers read. See const.py for the rules and the scope decisions.
 
 from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.start import async_at_started
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, PLATFORMS
-from .coordinator import HouseholdStateCoordinator
+from .const import DEFAULT_SCAN_INTERVAL, PLATFORMS
+from .coordinator import HouseholdStateConfigEntry, HouseholdStateCoordinator
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: HouseholdStateConfigEntry
+) -> bool:
     scan = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
     coordinator = HouseholdStateCoordinator(hass, scan)
 
@@ -25,7 +26,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_load_ages()
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    # `runtime-data`: the coordinator lives on the entry, so it is torn down
+    # with the entry and no module-global outlives a failed unload.
+    entry.runtime_data = coordinator
 
     # Source-condition logging stays silent until HA reaches RUNNING. Every
     # source here is another integration's entity, and the registry restores
@@ -40,12 +43,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def _async_reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_reload(
+    hass: HomeAssistant, entry: HouseholdStateConfigEntry
+) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-    return ok
+async def async_unload_entry(
+    hass: HomeAssistant, entry: HouseholdStateConfigEntry
+) -> bool:
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

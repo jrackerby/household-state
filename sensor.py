@@ -13,12 +13,21 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import EntityCategory
 
-from .const import DISP_OK, DOMAIN, INTEGRITY_OK, SOURCES
+from .const import DISP_OK, INTEGRITY_OK, SOURCES
+from .coordinator import HouseholdStateConfigEntry
 from .entity import HouseholdStateEntity
 
+# Quality scale `parallel-updates`. Zero, and it costs nothing: every entity
+# here is coordinator-driven and read-only, so there is no per-entity update
+# to serialise and no device to overwhelm. Declared rather than left to the
+# default because the rule is about saying which it is.
+PARALLEL_UPDATES = 0
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+async def async_setup_entry(
+    hass, entry: HouseholdStateConfigEntry, async_add_entities
+) -> None:
+    coordinator = entry.runtime_data
     ents = [
         StageSensor(coordinator, entry.entry_id),
         DirectiveSensor(coordinator, entry.entry_id),

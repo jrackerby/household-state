@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er, label_registry as lr
 from homeassistant.helpers.storage import Store
@@ -702,3 +702,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             r["key"] for r in readings if r["axis"] == AXIS_DIRECTIVE
         ]
         return out
+
+
+# The quality scale's `runtime-data` rule: the coordinator hangs off the entry
+# itself, and the entry carries its type. A plain assignment rather than a PEP
+# 695 `type` statement so the alias evaluates on the interpreter the suite runs
+# on as well as the one HA requires — the rule is about where runtime data
+# lives, not about which alias syntax declares it.
+HouseholdStateConfigEntry = ConfigEntry[HouseholdStateCoordinator]

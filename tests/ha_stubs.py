@@ -49,10 +49,58 @@ def install() -> None:
         SETUP_RETRY = "setup_retry"
 
     class ConfigEntry:  # noqa: D101
-        pass
+        # Subscriptable because the quality scale's `runtime-data` rule types
+        # the entry by what it carries: coordinator.py evaluates
+        # `ConfigEntry[HouseholdStateCoordinator]` at import.
+        def __class_getitem__(cls, _item):
+            return cls
+
+    # Enough of the flow bases to import and drive config_flow.py.
+    #
+    # WHAT THIS DOES AND DOES NOT PROVE. It executes THIS repo's flow logic —
+    # the single-instance abort, the empty user schema, the options default
+    # read back off the entry, the 1-300 bound on scan_interval. It proves
+    # nothing about core's real flow manager: step dispatch, the translation
+    # lookups behind `reason`, or how an OptionsFlow is handed its entry in
+    # the HA version of the day. The trade is ha_stubs' standing one, stated
+    # in this file's docstring and in validate.yml's tests job.
+    class _FlowBase:
+        def async_show_form(self, *, step_id, data_schema=None, errors=None):
+            return {
+                "type": "form",
+                "step_id": step_id,
+                "data_schema": data_schema,
+                "errors": errors,
+            }
+
+        def async_create_entry(self, *, title, data):
+            return {"type": "create_entry", "title": title, "data": data}
+
+        def async_abort(self, *, reason):
+            return {"type": "abort", "reason": reason}
+
+    class ConfigFlow(_FlowBase):  # noqa: D101
+        # Real core records the domain off the subclass keyword; the tests
+        # read it back to prove the flow is registered against this
+        # integration rather than silently against nothing.
+        def __init_subclass__(cls, /, domain=None, **kw):
+            super().__init_subclass__(**kw)
+            cls.domain = domain
+
+        # Set by a test to say what is already configured.
+        _current_entries = ()
+
+        def _async_current_entries(self, include_ignore=True):
+            return list(self._current_entries)
+
+    class OptionsFlow(_FlowBase):  # noqa: D101
+        # Core hands the flow its entry; here a test assigns it directly.
+        config_entry = None
 
     config_entries.ConfigEntryState = ConfigEntryState
     config_entries.ConfigEntry = ConfigEntry
+    config_entries.ConfigFlow = ConfigFlow
+    config_entries.OptionsFlow = OptionsFlow
 
     mod("homeassistant.helpers")
 

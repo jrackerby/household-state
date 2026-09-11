@@ -140,17 +140,60 @@ def test_exempt_carries_its_reason(rules, rule):
     assert comment and comment.strip(), f"{rule}: exempt with no comment"
 
 
-def test_no_tier_is_silently_claimed():
-    """manifest.json must not declare a quality_scale key while Bronze carries
-    todos: hassfest accepts the key for a custom component and validates
-    nothing behind it, so the declaration would be a self-claim."""
+TIERS = (("bronze", BRONZE), ("silver", SILVER), ("gold", GOLD), ("platinum", PLATINUM))
+
+
+def _satisfied(rules, tier_rules):
+    """Rules of a tier that are not yet done or exempt."""
+    return [r for r in tier_rules
+            if _status(rules[r]) not in {"done", "exempt"}]
+
+
+def test_a_declared_tier_is_backed_by_the_gap_list(rules):
+    """hassfest accepts a `quality_scale` key for a custom component and
+    validates NOTHING behind it, so the declaration is a self-claim unless
+    something here checks it.
+
+    Derived from quality_scale.yaml rather than hardcoded, so this test stays
+    correct as rules close instead of having to be edited in the same pass
+    that earns the tier — an edit nobody would notice was self-serving.
+    """
     import json
 
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-    assert "quality_scale" not in manifest, (
-        "manifest declares a tier; nothing gates that claim for a custom "
-        "component. Close the Bronze todos in quality_scale.yaml first."
+    claimed = manifest.get("quality_scale")
+
+    if claimed is None:
+        # Declaring nothing is never a false claim. Today that is also the
+        # only honest option: `brands` is short of Bronze.
+        return
+
+    names = [name for name, _ in TIERS]
+    assert claimed in names, f"manifest declares unknown tier {claimed!r}"
+
+    # Every tier up to and including the claimed one must be fully satisfied.
+    outstanding = {}
+    for name, tier_rules in TIERS[: names.index(claimed) + 1]:
+        missing = _satisfied(rules, tier_rules)
+        if missing:
+            outstanding[name] = missing
+    assert not outstanding, (
+        f"manifest claims {claimed!r}, but quality_scale.yaml still carries "
+        f"todos at or below that tier: {outstanding}"
     )
+
+
+def test_bronze_is_the_floor_and_we_know_where_we_stand(rules):
+    """LAW §15: Bronze is the floor for anything shipped. This does not fail
+    the build for being short of it — the gap-list's whole job is to say so
+    honestly — but it does fail if the ANSWER goes missing, which is what
+    happens when a rule is quietly dropped or restatused without a comment."""
+    missing = _satisfied(rules, BRONZE)
+    for rule in missing:
+        value = rules[rule]
+        assert isinstance(value, dict) and value.get("comment", "").strip(), (
+            f"{rule} is short of the floor with no comment saying why"
+        )
 
 
 def test_the_assertions_can_fail():

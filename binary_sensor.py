@@ -14,12 +14,18 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 
-from .const import DOMAIN
+from .coordinator import HouseholdStateConfigEntry
 from .entity import HouseholdStateEntity
 
+# Quality scale `parallel-updates`. Zero — coordinator-driven and read-only;
+# see sensor.py.
+PARALLEL_UPDATES = 0
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+async def async_setup_entry(
+    hass, entry: HouseholdStateConfigEntry, async_add_entities
+) -> None:
+    coordinator = entry.runtime_data
     async_add_entities([FeedHealth(coordinator, entry.entry_id), Quiet(coordinator, entry.entry_id)])
 
 
