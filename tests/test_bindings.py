@@ -5,7 +5,7 @@ read. Which entity supplies it is an installation detail. Hardcoding that made
 this component readable by exactly one household: every id resolved to `absent`
 anywhere else, and `absent` is the state the component exists to make loud.
 
-These tests pin the resolution rules, not the estate's particular ids — so they
+These tests pin the resolution rules, not the installation's particular ids — so they
 keep passing when the defaults are removed from const.py entirely.
 """
 

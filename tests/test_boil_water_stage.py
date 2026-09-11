@@ -62,7 +62,7 @@ from household_state.const import (  # noqa: E402
 from household_state.resolver import band_for, stage_for  # noqa: E402
 
 ROW = next(s for s in SOURCES if s["key"] == "boil_water")
-# #16: SOURCES ships no estate ids, so the suite names its own.
+# #16: SOURCES ships no installation-specific ids, so the suite names its own.
 _BOIL_ENTITY = "binary_sensor.test_boil_water_advisory"
 
 
@@ -152,7 +152,7 @@ CASES = [
     ("directive axis now carries CAP plus this one hazard source",
      lambda: len([s for s in SOURCES if s["axis"] == "directive"]), 2),
     # Both rows are bound INDEPENDENTLY on purpose: one advisory on two axes
-    # is this estate's arrangement, not a law of the component, and another
+    # is this installation's arrangement, not a law of the component, and another
     # household may legitimately have separate sources. What must hold is that
     # each is bindable, and that binding both to one entity really does put
     # the same advisory on both axes.

@@ -152,7 +152,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         before the integration that owns it has published a state, so the
         first polls see `st is None` for perimeter contacts and source
         sensors that are merely still starting. Logging that is noise
-        about HA's boot, not about the estate.
+        about HA's boot, not about the installation.
 
         Only the LOGGING is gated. The readings themselves are unchanged
         and still publish `absent` / `unknown` on the entity attributes

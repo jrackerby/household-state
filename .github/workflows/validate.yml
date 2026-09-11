@@ -1,8 +1,8 @@
 name: validate
 
-# This repo shipped with no CI at all: a change landed, a pointer moved, and
-# nothing between the edit and
-# the live estate ever validated the manifest.
+# This repository shipped without CI: a change landed and nothing between the
+# edit and a running Home Assistant ever validated the manifest. These jobs are
+# that missing gate.
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
       # ROOT (hacs.json content_in_root: true) because Home Assistant loads
       # it AS custom_components/${{ env.DOMAIN }}. Handed the repo as-is,
       # hassfest finds zero integrations. So build the HA layout here rather
-      # than restructure the repo and break the submodule path.
+      # than restructure the repo and break the way HACS installs it.
       - name: stage the custom_components layout hassfest scans
         run: |
           mkdir -p "custom_components/$DOMAIN"
