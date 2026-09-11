@@ -482,18 +482,18 @@ SOURCES = (
         # entity home_posture.yaml reads — one more attribute off it, not a
         # new fetch — so §16.4's attribution property survives 0.3.0.
         #
-        # KAN-336 TRIED TO ADD sensor.nws_neighbouring_county_threat HERE AS A
-        # SECOND ROW AND WAS WRONG TO. the neighbouring county was never on the STAGE
-        # axis either — nws_alerts.yaml's own header calls it "watch
-        # a nearby city", awareness-only, for the same reason home_posture.yaml
-        # never reads it. Joel: he lives in the household's county, and the household
-        # this axis speaks for is the household's own county — DIRECTIVE issues
-        # instructions naming that house's own rooms (LAW 11's "Directive
-        # text: name the location"). Giving a neighbouring-county-only CAP alert
-        # equal power to say EVACUATE or SHELTER for a house it has no
-        # bearing on would have been a real, live safety-instruction defect,
-        # caught before the restart that would have shipped it. the neighbouring county
-        # stays awareness-only, same as it always was on STAGE.
+        # KAN-336 TRIED TO ADD AN ADJACENT-JURISDICTION CAP SENSOR HERE AS
+        # A SECOND ROW AND WAS WRONG TO. That sensor was never on the STAGE
+        # axis either — nws_alerts.yaml's own header calls it awareness-only,
+        # for the same reason home_posture.yaml never reads it. THE DIRECTIVE
+        # AXIS SPEAKS FOR EXACTLY ONE JURISDICTION, the one the household
+        # sits in, because DIRECTIVE issues instructions naming that
+        # household's own rooms (LAW 11's "Directive text: name the
+        # location"). A CAP alert scoped to a neighbouring jurisdiction has
+        # no bearing on those rooms, so giving it equal power to say EVACUATE
+        # or SHELTER would have been a real, live safety-instruction defect,
+        # caught before the restart that would have shipped it. The adjacent
+        # sensor stays awareness-only, same as it always was on STAGE.
         "key": "nws_cap",
         "name": "CAP Directive",
         "entity_id": "sensor.nws_union_threat",
