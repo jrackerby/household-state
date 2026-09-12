@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="brand/logo@2x.png" alt="Household State" width="420">
+</p>
+
 # Household State
 
 Resolves what a home already knows about hazards and readiness — weather and
