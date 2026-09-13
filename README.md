@@ -25,6 +25,7 @@ publishes them separately:
 | `sensor.household_state_directive` | `none`, `secure`, `shelter`, `evacuate`, `boil_water` | **what should people do** — an instruction, not an intensity |
 | `sensor.household_state_integrity` | `ok`, `degraded`, `unknown` | **can this layer be trusted** — whether the sources behind the two answers above are readable |
 | `binary_sensor.household_state_quiet` | `on` / `off` | whether the house is asleep. A modifier, not a severity: it suppresses nothing on any axis |
+| `binary_sensor.household_state_<macro>` | `on` / `off` | one per [custom macro state](docs/migrating-from-input-boolean-helpers.md) you define — Guest, Vacation, Away. Modifiers too, on the same terms |
 | `binary_sensor.household_state_feed_health` | problem | any source unhealthy, with `sources_healthy` / `sources_total` / `confidence` |
 | `sensor.household_state_<source>` | per source | diagnostic, one per bound source — where a dead feed becomes visible instead of becoming a zero |
 
@@ -57,6 +58,9 @@ These are the invariants; `resolver.py` holds them and imports nothing from
   subject down.
 - **Nothing is named at severity zero.** A declined signal is stated on the
   entity (`suppressed`), never silently dropped.
+- **A modifier moves no axis.** QUIET and every custom macro state carry no
+  severity and are counted in no axis. A household that could raise its own
+  stage from a form would have a ramp that no longer means anything.
 
 ## What it creates
 
@@ -65,7 +69,15 @@ Platforms: `sensor`, `binary_sensor`.
 ## Configuration
 
 Config flow, single entry. Setup asks for nothing — there is no host, token
-or endpoint. One option, changed under *Configure* on the entry:
+or endpoint. Everything else is under *Configure* on the entry, which opens on
+a menu:
+
+- **Poll interval and source bindings** — the settings below.
+- **Define / Edit / Delete a macro state** — the custom household modifiers,
+  documented in [docs/migrating-from-input-boolean-helpers.md](docs/migrating-from-input-boolean-helpers.md)
+  and summarised below.
+
+One setting is not a binding:
 
 | option | default | range | what it does |
 |---|---|---|---|
@@ -119,6 +131,58 @@ same threat sensor on different axes, as do the two boil-water rows, and the
 fire/life-safety and security rows are told apart only by which attribute
 triple they read. Bind them independently.
 
+### Custom macro states
+
+A macro state is a named household modifier — `Guest`, `Vacation`, `Away` —
+resolved from an entity you already have and published as
+`binary_sensor.household_state_<name>` on the same device as the axes. It is
+QUIET's shape with the name and the source moved into the options flow, so a
+second modifier is a form rather than a release.
+
+*Configure → Define a macro state* asks for four things:
+
+| field | | |
+|---|---|---|
+| **Name** | required | Becomes the entity id, **once**. Frozen after creation — see below. |
+| **Entity to read** | required | Any entity: an `input_boolean` helper, a `schedule`, a `person`, an `input_select`. |
+| **State that means on** | defaults to `on` | Matched exactly and case-sensitively against that entity's state. |
+| **Icon** | optional | An `mdi:` icon. |
+
+**It creates nothing writable.** A macro state mirrors the entity you name; it
+does not become a switch, because this integration does not own the fact — the
+bound entity does. A household that wants something flippable still wants an
+`input_boolean`. What it stops needing is the template-sensor layer on top of
+one, which is the actual migration.
+
+**It moves no axis.** No severity, absent from `sources_total` and
+`confidence`, and it cannot make the feed-health sensor report a problem. Guest
+mode is not a hazard.
+
+**Unreadable is `unknown`, never `off`.** The same refusal as every other read
+here: `is_state()` in a template returns `false` for a helper that was deleted,
+which is a positive claim about the household manufactured out of an absence. A
+macro publishes `unknown` and states why in its `disposition` attribute
+(`absent`, `unreachable`, `unknown`).
+
+**The name sets the entity id and is frozen at creation.** Home Assistant never
+reclaims an id, so a slug that tracked the name would mint a second entity on
+every rename and orphan the one your dashboards read. The edit form changes the
+friendly name, the bound entity, the state string and the icon — never the id.
+`Quiet` and `Feed health` are refused because they collide with entities this
+integration already publishes; `Stage`, `Directive` and `Integrity` are refused
+because a binary sensor beside the sensor of the same name, answering a
+different question, is a trap.
+
+**Deleting one removes its registry row**, rather than leaving a permanently
+unavailable entity holding the id — which is why that form asks for a
+confirmation, and why re-adding the same macro later gets the same id back
+instead of a `_2` suffix.
+
+Each macro publishes `slug`, `source_entity_id`, `raw_state`, `on_state`,
+`disposition` and `since` as attributes. `raw_state` and `on_state` are both
+there on purpose: a macro stuck at `off` because the entity says `Home` and the
+form says `home` is diagnosable from those two and from nothing else.
+
 ### Keeping a published id across a rename (advanced)
 
 Each source also accepts a `<source>.slug` override. **A fresh install should
@@ -167,7 +231,9 @@ ones shown as unavailable — before adding the integration back.
 
 Nothing else is left behind. The integration writes no files outside its own
 `.storage` ledger of entity ages, which goes with the config entry; it creates
-no helpers, calls no service, and modifies no entity it reads.
+no helpers, calls no service, and modifies no entity it reads. Helpers a macro
+state was bound to are untouched — a macro reads an `input_boolean`, it does
+not own one.
 
 ## Development
 

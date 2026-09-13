@@ -180,3 +180,128 @@ def test_the_assertions_can_fail(setup):
     assert asyncio.run(household_state.async_unload_entry(hass, entry)) is True
     hass.config_entries.unload_result = False
     assert asyncio.run(household_state.async_unload_entry(hass, entry)) is False
+
+
+# ======================================== macro states: setup and cleanup
+
+_GUEST = {"slug": "guest", "name": "Guest", "entity_id": "input_boolean.guest",
+          "on_state": "on", "icon": None}
+
+
+def _hass_with_rows(*rows):
+    """A hass whose entity registry already carries `rows` for this entry."""
+    hass = FakeHass()
+    hass.entity_registry = ha_stubs.FakeEntityRegistry(rows)
+    return hass
+
+
+def _row(entity_id, unique_id, entry_id="01ENTRY"):
+    return ha_stubs.FakeRegistryEntry(
+        entity_id, unique_id=unique_id, config_entry_id=entry_id
+    )
+
+
+def test_the_macros_reach_the_coordinator_from_the_entry():
+    hass, entry = FakeHass(), FakeEntry({"macros": [_GUEST]})
+    asyncio.run(household_state.async_setup_entry(hass, entry))
+    assert [m["slug"] for m in entry.runtime_data.macros] == ["guest"]
+
+
+def test_the_macros_option_is_not_handed_over_as_a_source_binding():
+    """__init__ splits entry.options into bindings and everything else. A
+    non-binding option missing from that split becomes a binding for a source
+    named after itself, which resolves to nothing and says nothing."""
+    hass, entry = FakeHass(), FakeEntry({"macros": [_GUEST], "scan_interval": 9})
+    asyncio.run(household_state.async_setup_entry(hass, entry))
+    assert entry.runtime_data._bindings == {}
+
+
+def test_a_macro_that_was_deleted_takes_its_registry_row_with_it():
+    """NOTHING ELSE RECLAIMS IT. A macro removed in the options flow would
+    otherwise keep publishing binary_sensor.household_state_<slug> forever,
+    permanently unavailable, with the id still taken — so re-adding the same
+    macro later lands on `_2` and every dashboard keeps reading the ghost.
+    Same id-is-never-reclaimed problem the README warns about for reinstalls,
+    except this one is reachable from a form."""
+    hass = _hass_with_rows(
+        _row("binary_sensor.household_state_guest", "01ENTRY_macro_guest"),
+        _row("binary_sensor.household_state_party", "01ENTRY_macro_party"),
+    )
+    entry = FakeEntry({"macros": [_GUEST]})
+    asyncio.run(household_state.async_setup_entry(hass, entry))
+    assert hass.entity_registry.removed == ["binary_sensor.household_state_party"]
+
+
+def test_the_cleanup_leaves_every_entity_that_is_not_a_macro_alone():
+    """The axes, the per-source diagnostics, QUIET and feed health carry no
+    `_macro_` prefix. A cleanup that caught one of them would delete the
+    entity every dashboard in the house reads."""
+    hass = _hass_with_rows(
+        _row("sensor.household_state_stage", "01ENTRY_stage"),
+        _row("binary_sensor.household_state_quiet", "01ENTRY_quiet"),
+        _row("binary_sensor.household_state_feed_health", "01ENTRY_feed_health"),
+        _row("sensor.household_state_ntas", "01ENTRY_src_ntas"),
+    )
+    asyncio.run(household_state.async_setup_entry(hass, FakeEntry()))
+    assert hass.entity_registry.removed == []
+
+
+def test_another_entry_s_macro_rows_are_not_touched():
+    """The prefix carries the entry id. `single_config_entry` makes a second
+    entry unreachable today, but a cleanup keyed on `_macro_` alone would be
+    wrong the moment that stops being true — and wrong by deleting."""
+    hass = _hass_with_rows(
+        _row("binary_sensor.other_guest", "OTHERENTRY_macro_guest",
+             entry_id="OTHERENTRY"),
+    )
+    asyncio.run(household_state.async_setup_entry(hass, FakeEntry()))
+    assert hass.entity_registry.removed == []
+
+
+def test_the_cleanup_runs_before_the_platforms_are_set_up():
+    """An entity added and then removed in the same pass flickers through
+    every surface subscribed to the registry."""
+    order = []
+
+    hass = _hass_with_rows(
+        _row("binary_sensor.household_state_party", "01ENTRY_macro_party"),
+    )
+
+    class _Registry(ha_stubs.FakeEntityRegistry):
+        def async_remove(self, entity_id):
+            order.append("remove")
+            super().async_remove(entity_id)
+
+    hass.entity_registry = _Registry(list(hass.entity_registry.entities.values()))
+
+    real_forward = hass.config_entries.async_forward_entry_setups
+
+    async def _forward(entry, platforms):
+        order.append("forward")
+        await real_forward(entry, platforms)
+
+    hass.config_entries.async_forward_entry_setups = _forward
+    asyncio.run(household_state.async_setup_entry(hass, FakeEntry()))
+    assert order == ["remove", "forward"]
+
+
+def test_a_registry_that_will_not_answer_does_not_take_setup_down():
+    """RULE 1's reasoning, applied to setup: the registry API can move under
+    an upgrade, and a stale entity row is untidy where an integration that
+    will not start is an outage."""
+    hass = FakeHass()
+
+    class _Exploding:
+        @property
+        def entities(self):
+            raise RuntimeError("registry moved")
+
+    hass.entity_registry = _Exploding()
+    assert asyncio.run(household_state.async_setup_entry(hass, FakeEntry())) is True
+
+
+def test_nothing_is_removed_when_no_macro_row_exists():
+    """The common case: an installation that has never defined one."""
+    hass = _hass_with_rows()
+    asyncio.run(household_state.async_setup_entry(hass, FakeEntry()))
+    assert hass.entity_registry.removed == []

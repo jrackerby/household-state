@@ -27,6 +27,7 @@ from .const import (
     FALL_DWELL,
     INTEGRITY_DEGRADED,
     INTEGRITY_OK,
+    normalize_macros,
     PERIMETER_DWELL,
     PERIMETER_LABEL,
     PERIMETER_OPEN_STATES,
@@ -85,6 +86,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         hass: HomeAssistant,
         scan_interval: int,
         bindings: dict | None = None,
+        macros=(),
     ) -> None:
         super().__init__(
             hass,
@@ -97,6 +99,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         # rather than baked into the spec at setup, so a reconfigure reaches
         # the next poll without a reload having to rebuild the row.
         self._bindings = dict(bindings or {})
+        # Custom macro states. Normalised ONCE, here, so every reader below
+        # works on rows that are known to carry a slug and an entity id --
+        # `.storage` is hand-editable and a half-written row must not reach the
+        # entity layer, where it would publish under a name nobody chose.
+        self._macros = normalize_macros(macros)
         self._store = Store(hass, STORE_VERSION, STORE_KEY)
         self._ages: dict = {}
         self._ages_loaded = False
@@ -455,6 +462,74 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._warn_once("quiet", "")
         base["quiet"] = st.state == "on"
         return base
+
+    @property
+    def macros(self) -> tuple:
+        """The macro states this entry publishes, normalised and in order.
+
+        Read by binary_sensor.py to decide which entities exist, and by
+        __init__.py to decide which registry rows a deleted macro left behind.
+        A property rather than a bare attribute so those two never reach for
+        the raw option value and disagree about what a usable row is.
+        """
+        return self._macros
+
+    def _read_macro(self, macro: dict) -> dict:
+        """One macro state -> one reading.
+
+        THE SAME REFUSAL AS EVERY OTHER READ IN THIS FILE, and for the same
+        reason: `state` is None -- never False -- when the source cannot be
+        read. A modifier that reads `off` because its helper was deleted tells
+        a dashboard the house is not in guest mode, which is a positive claim
+        made out of an absence.
+
+        RULE 7: nothing here reaches an axis. There is no severity on this
+        reading and it is counted in no source total; a macro is published
+        beside the axes, never into them.
+        """
+        slug = macro["slug"]
+        eid = macro["entity_id"]
+        base = {
+            "slug": slug,
+            "name": macro["name"],
+            "entity_id": eid,
+            "on_state": macro["on_state"],
+            "icon": macro["icon"],
+            "state": None,
+            "raw_state": None,
+            "disposition": DISP_ABSENT,
+        }
+        key = "macro." + slug
+
+        st = self.hass.states.get(eid)
+        if st is None:
+            self._warn_once(
+                key, "missing", eid + " does not exist (macro " + slug + ")"
+            )
+            return base
+
+        base["raw_state"] = st.state
+        if st.state == "unavailable":
+            base["disposition"] = DISP_UNREACHABLE
+            self._warn_once(key, "unavailable", eid + " is unavailable")
+            return base
+        if st.state in ("unknown", ""):
+            base["disposition"] = DISP_UNKNOWN
+            self._warn_once(key, "unknown", eid + " is unknown")
+            return base
+
+        self._warn_once(key, "")
+        base["disposition"] = DISP_OK
+        # EXACT STRING MATCH, NOT TRUTHINESS. `on_state` is what the user typed
+        # into the form, and an input_select reading "Guest" is not the same
+        # fact as one reading "guest" -- matching loosely here would make the
+        # form lie about which state it was told to watch.
+        base["state"] = st.state == macro["on_state"]
+        return base
+
+    def _read_macros(self) -> dict:
+        """Every macro state, keyed by slug."""
+        return {m["slug"]: self._read_macro(m) for m in self._macros}
 
     def _perimeter_label(self) -> str:
         """The label whose members ARE the perimeter, after binding."""
@@ -835,6 +910,14 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         out.update(self._read_quiet())
         out["quiet_since"] = self._mark("quiet", out["quiet"])
+
+        # RULE 7. Macro states are attached AFTER resolve() has run and are
+        # never handed to it: resolve() reads the SOURCES readings and nothing
+        # else, so a macro cannot reach an axis even by accident.
+        macros = self._read_macros()
+        for slug, reading in macros.items():
+            reading["since"] = self._mark("macro." + slug, reading["state"])
+        out["macros"] = macros
 
         out["stage_since"] = self._mark("stage", out["stage"])
         out["integrity_since"] = self._mark("integrity", out["integrity"])

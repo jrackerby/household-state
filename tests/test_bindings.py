@@ -178,34 +178,76 @@ def test_no_binding_is_declared_twice():
     assert len(seen) == len(set(seen)), "duplicate binding key"
 
 
-def test_the_options_flow_offers_every_binding_and_round_trips_it():
-    """THE MERGE GUARD. The options flow is one step today, so what it returns
-    IS the whole option set and it cannot drop anything. If it ever grows a
-    second step, async_create_entry(data=...) replaces entry.options wholesale
-    and a step that forgets to merge silently deletes every binding
-    another step owns. This is the test that goes red when that happens."""
-    import asyncio
-
-    from household_state.config_flow import HouseholdStateOptionsFlow
-
+def _every_binding():
     every = {bind_key(k, f): f"sensor.bound_{k}_{f}" for k, f, _d, _l in BINDABLE}
     every.update({bind_key(k, f): f"text_{k}_{f}" for k, f, _l in BINDABLE_TEXT})
     every["scan_interval"] = 11
+    return every
+
+
+def _flow_over(options):
+    from household_state.config_flow import HouseholdStateOptionsFlow
 
     class _Entry:
-        options = dict(every)
+        pass
 
     flow = HouseholdStateOptionsFlow()
-    flow.config_entry = _Entry()
+    entry = _Entry()
+    entry.options = dict(options)
+    flow.config_entry = entry
+    return flow
 
-    form = asyncio.run(flow.async_step_init(None))
+
+def test_the_options_flow_offers_every_binding_and_round_trips_it():
+    """THE MERGE GUARD, HALF ONE. The bindings step must offer every binding
+    and give every one of them back: a binding the form does not offer cannot
+    be changed, and one it offers but drops on save is cleared by opening the
+    form and pressing Submit."""
+    import asyncio
+
+    every = _every_binding()
+    flow = _flow_over(every)
+
+    form = asyncio.run(flow.async_step_bindings(None))
     offered = set(form["data_schema"].schema)
     for key in every:
         assert any(str(k) == key for k in offered), f"{key} not offered"
 
-    saved = asyncio.run(flow.async_step_init(every))
+    saved = asyncio.run(flow.async_step_bindings(every))
     assert saved["type"] == "create_entry"
     assert saved["data"] == every, "a binding was dropped on save"
+
+
+def test_no_other_step_can_clear_the_bindings():
+    """THE MERGE GUARD, HALF TWO, AND THE REASON IT EXISTS. The flow stopped
+    being one step when macro states arrived, and `async_create_entry(data=...)`
+    REPLACES entry.options wholesale — so a step that returns only its own
+    fields silently deletes every binding here. The deletion is invisible in
+    the UI and surfaces as a house full of `absent` sources after the reload.
+
+    Every terminal step in config_flow.py routes through one merge helper.
+    This is the test that goes red if a step added later does not."""
+    import asyncio
+
+    every = _every_binding()
+
+    added = asyncio.run(
+        _flow_over(every).async_step_macro_add(
+            {"name": "Guest", "entity_id": "input_boolean.guest"}
+        )
+    )
+    assert added["type"] == "create_entry"
+    for key, value in every.items():
+        assert added["data"][key] == value, f"{key} was dropped by macro_add"
+
+    with_macro = dict(added["data"])
+    removed = asyncio.run(
+        _flow_over(with_macro).async_step_macro_remove(
+            {"slug": "guest", "confirm": True}
+        )
+    )
+    for key, value in every.items():
+        assert removed["data"][key] == value, f"{key} was dropped by macro_remove"
 
 
 def test_bindings_reach_the_coordinator_from_the_entry():
