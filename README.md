@@ -40,27 +40,13 @@ directive's `reason` and `suppressed` list as attributes, so a surface can say
 
 ## The rules that make the answers trustworthy
 
-These are the invariants; `resolver.py` holds them and imports nothing from
-`homeassistant`, so they are testable without Home Assistant running.
-
-- **`unknown` is not `normal`, and never green.** A source that could not be
-  read reports `absent` loudly rather than as a quiet zero.
-- **`ok at zero` and `could not read` do not collapse**, on any source, at any
-  layer. A per-source sensor's state is the *worse* of the two — the read
-  succeeding is not the source being healthy.
-- **Integrity never moves stage.** There is no `severity` on the integrity
-  axis.
-- **Fall dwell, never rise dwell.** A rise in severity publishes immediately; a
-  fall is held for a dwell so a flap does not read as an all-clear. Losing
-  sight of a source counts as a fall.
-- **The coordinator never raises `UpdateFailed`** and every entity stays
-  available. A monitor that disappears with its subject cannot report the
-  subject down.
-- **Nothing is named at severity zero.** A declined signal is stated on the
-  entity (`suppressed`), never silently dropped.
-- **A modifier moves no axis.** QUIET and every custom macro state carry no
-  severity and are counted in no axis. A household that could raise its own
-  stage from a form would have a ramp that no longer means anything.
+The invariants — unknown is never normal, integrity never moves stage, fall
+dwell only, the coordinator never raises `UpdateFailed`, nothing is named at
+zero, a modifier moves no axis — and the directive vocabulary, its two
+classifiers and the hard gate are the design contract in
+[docs/DESIGN_CONTRACT.md](docs/DESIGN_CONTRACT.md). `resolver.py` holds them
+and imports nothing from `homeassistant`, so they are testable without Home
+Assistant running.
 
 ## What it creates
 
