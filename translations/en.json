@@ -6,16 +6,81 @@
     "step": {
       "user": {
         "title": "Household State",
-        "description": "Resolves the household stage, directive and integrity axes from the existing threat sources, plus the QUIET modifier from sleep mode. It reads only: it writes nothing, calls no service, and changes no other entity."
+        "description": "Resolves the household stage, directive and integrity axes from the existing threat sources, plus the QUIET modifier from sleep mode and any custom macro states you define. It reads only: it writes nothing, calls no service, and changes no other entity."
       }
     }
   },
   "options": {
+    "error": {
+      "invalid_name": "That name cannot be turned into an entity id. Use at least one letter or digit.",
+      "reserved_name": "Household State already publishes an entity with that name. Choose another.",
+      "duplicate_name": "A macro state with that name already exists.",
+      "entity_required": "A macro state has to name the entity it reads.",
+      "not_confirmed": "Tick the confirmation to delete this macro state."
+    },
     "step": {
       "init": {
         "title": "Household State options",
+        "description": "Sources and the poll interval, or the custom macro states this household publishes.",
+        "menu_options": {
+          "bindings": "Poll interval and source bindings",
+          "macro_add": "Define a macro state",
+          "macro_edit": "Edit a macro state",
+          "macro_remove": "Delete a macro state"
+        }
+      },
+      "bindings": {
+        "title": "Sources",
+        "description": "Which entity supplies each source. Leaving one blank keeps the shipped default; an id that does not resolve reports as absent rather than as a quiet zero.",
         "data": {
           "scan_interval": "Poll interval (seconds)"
+        }
+      },
+      "macro_add": {
+        "title": "Define a macro state",
+        "description": "A macro state is a named household modifier — Guest, Vacation, Away — resolved from an entity you already have and published as a binary sensor beside the axes. It is read-only: it mirrors the entity you name, it does not become a switch, and it moves no axis. The name sets the entity id and cannot be changed afterwards; everything else can.",
+        "data": {
+          "name": "Name",
+          "entity_id": "Entity to read",
+          "on_state": "State that means on",
+          "icon": "Icon (optional)"
+        },
+        "data_description": {
+          "name": "Becomes binary_sensor.household_state_<name>, fixed at creation. Up to {max} characters.",
+          "entity_id": "Any entity: an input_boolean helper, a schedule, a person, a select.",
+          "on_state": "Matched exactly and case-sensitively against the entity's state. \"on\" for a helper or a schedule; \"not_home\" for a person; whatever option you chose for a select.",
+          "icon": "An mdi: icon, for example mdi:account-group."
+        }
+      },
+      "macro_edit": {
+        "title": "Edit a macro state",
+        "description": "Which macro state to edit.",
+        "data": {
+          "slug": "Macro state"
+        }
+      },
+      "macro_detail": {
+        "title": "Edit {name}",
+        "description": "Editing the macro state published as binary_sensor.household_state_{slug}. Renaming it changes the friendly name only — the entity id stays where it is, so nothing reading it breaks.",
+        "data": {
+          "name": "Name",
+          "entity_id": "Entity to read",
+          "on_state": "State that means on",
+          "icon": "Icon (optional)"
+        },
+        "data_description": {
+          "name": "The friendly name. The entity id does not follow it.",
+          "entity_id": "Any entity: an input_boolean helper, a schedule, a person, a select.",
+          "on_state": "Matched exactly and case-sensitively against the entity's state.",
+          "icon": "An mdi: icon, for example mdi:account-group."
+        }
+      },
+      "macro_remove": {
+        "title": "Delete a macro state",
+        "description": "The entity is removed from the registry, not left behind as an unavailable row — so anything still reading binary_sensor.household_state_<name> stops resolving.",
+        "data": {
+          "slug": "Macro state",
+          "confirm": "Yes, delete it"
         }
       }
     }

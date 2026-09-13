@@ -33,8 +33,12 @@ ENTRY_ID = "01ENTRYID"
 
 
 class FakeCoordinator:
-    def __init__(self, data=None):
+    def __init__(self, data=None, macros=()):
         self.data = data
+        # The macro roster the binary platform builds its entities from.
+        # Empty by default: every case that is not about macros wants the
+        # entity set this integration has always published.
+        self.macros = tuple(macros)
 
     def slug_for(self, spec):
         """#19: the published slug. Defaults to the key, which is what
@@ -43,15 +47,15 @@ class FakeCoordinator:
 
 
 class FakeEntry:
-    def __init__(self, data=None):
+    def __init__(self, data=None, macros=()):
         self.entry_id = ENTRY_ID
-        self.runtime_data = FakeCoordinator(data)
+        self.runtime_data = FakeCoordinator(data, macros)
 
 
-def _setup(platform, data=None):
+def _setup(platform, data=None, macros=()):
     """Drive a platform's async_setup_entry and return what it added."""
     added = []
-    asyncio.run(platform(None, FakeEntry(data), added.extend))
+    asyncio.run(platform(None, FakeEntry(data, macros), added.extend))
     return added
 
 

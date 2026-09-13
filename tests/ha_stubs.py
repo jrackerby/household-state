@@ -65,12 +65,28 @@ def install() -> None:
     # the HA version of the day. The trade is ha_stubs' standing one, stated
     # in this file's docstring and in validate.yml's tests job.
     class _FlowBase:
-        def async_show_form(self, *, step_id, data_schema=None, errors=None):
+        def async_show_form(self, *, step_id, data_schema=None, errors=None,
+                            description_placeholders=None):
             return {
                 "type": "form",
                 "step_id": step_id,
                 "data_schema": data_schema,
                 "errors": errors,
+                "description_placeholders": description_placeholders,
+            }
+
+        # Core's menu result. The FLOW MANAGER dispatches the chosen option to
+        # `async_step_<option>`; nothing here does, so a test that follows a
+        # menu calls the next step by name. That is the same trade as the rest
+        # of this file: the menu's CONTENTS are this repo's policy and are
+        # tested, the dispatch is core's and is not.
+        def async_show_menu(self, *, step_id, menu_options,
+                            description_placeholders=None):
+            return {
+                "type": "menu",
+                "step_id": step_id,
+                "menu_options": list(menu_options),
+                "description_placeholders": description_placeholders,
             }
 
         def async_create_entry(self, *, title, data):
@@ -248,6 +264,13 @@ class FakeRegistryEntry:
 class FakeEntityRegistry:
     def __init__(self, entries=()):
         self.entities = {e.entity_id: e for e in entries}
+        self.removed = []
+
+    def async_remove(self, entity_id):
+        """Core's row deletion. Recorded as well as applied, because the
+        interesting assertion is WHICH rows a cleanup chose to delete."""
+        self.removed.append(entity_id)
+        self.entities.pop(entity_id, None)
 
 
 class FakeLabelRegistry:

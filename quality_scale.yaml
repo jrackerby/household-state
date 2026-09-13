@@ -82,14 +82,28 @@ rules:
     comment: >-
       config_flow.py at 100% (measured, `pytest --cov=household_state`).
       tests/test_config_flow.py drives the single-instance abort, the empty
-      user schema, the options default read back off the entry, the inclusive
-      1-300 bound and the string coercion, and separately ties the
-      `single_instance_allowed` abort reason to translations/en.json — a
-      reason with no string behind it renders as a raw key and the flow
-      returns the key either way. It runs against tests/ha_stubs' flow bases,
-      so it proves this repo's flow logic and nothing about core's flow
-      manager; that trade is ha_stubs' standing one and is stated in both
-      files.
+      user schema, the options menu and every step behind it — the bindings
+      form's defaults, inclusive 1-300 bound and string coercion, and the
+      macro-state add/edit/remove steps including each refusal (invalid,
+      reserved, duplicate, unbound, unconfirmed) and the two pickers'
+      fallbacks when the entry is reconfigured in another window. It
+      separately ties every step id, menu option, error key and macro field
+      to translations/en.json, and the `single_instance_allowed` abort reason
+      with them — a key with no string behind it renders as the key and the
+      flow returns it either way.
+
+      THE MERGE GUARD IS THE PART THAT MATTERS NOW. The flow stopped being one
+      step when macro states arrived, and `async_create_entry(data=...)`
+      replaces entry.options wholesale, so a step returning only its own
+      fields silently deletes every option another step owns. Every terminal
+      step routes through one merge helper and every one of them is exercised
+      against a fully populated entry, here and in tests/test_bindings.py.
+
+      It runs against tests/ha_stubs' flow bases, so it proves this repo's
+      flow logic and nothing about core's flow manager — including the menu
+      DISPATCH, which is core's: the menu's contents are tested, the step core
+      calls next is not. That trade is ha_stubs' standing one and is stated in
+      both files.
   dependency-transparency:
     status: done
     comment: >-
@@ -251,7 +265,8 @@ rules:
     comment: >-
       99% across the package, measured, up from 49% when this repo was
       gap-listed (__init__, binary_sensor, config_flow, const, entity and
-      sensor at 100%, coordinator 99%, resolver 95%). The rule wants above 95%
+      sensor at 100%, coordinator 99%, resolver 95%). Held at 99% across the
+      custom macro states, whose own file is tests/test_macro_states.py. The rule wants above 95%
       and validate.yml now FAILS below it — a self-reported coverage figure
       drifts the moment code lands faster than tests do, which is how the repo
       reached 49% without anyone noticing. The suite runs against

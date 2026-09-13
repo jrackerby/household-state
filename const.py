@@ -58,6 +58,11 @@ RULES BAKED IN — DO NOT UNDO THEM
   6. FIRE/LIFE-SAFETY DEVICE HEALTH IS ON THE INTEGRITY AXIS ONLY. A
      smoke detector that has stopped reporting is an integrity fault,
      not a fire.
+  7. A MACRO STATE MOVES NO AXIS. User-defined modifiers — QUIET and
+     everything the options flow adds beside it — carry no severity and
+     are counted in no axis. RULE 4's reasoning one layer out: a
+     modifier that could move stage would let an installation raise its
+     own household to Critical from a form.
 
 WHAT THIS DELIBERATELY DOES NOT DO
   - It owns no fetches. It reads entities other integrations publish,
@@ -377,6 +382,168 @@ def bind_key(source_key: str, field: str) -> str:
     here would be one more thing an options flow has to merge correctly, and
     Getting this wrong costs a restart, which is why it is stated here."""
     return source_key + "." + field
+
+
+# --------------------------------------------------------- CUSTOM MACRO STATES
+#
+# WHAT A MACRO STATE IS. A named household modifier — GUEST, VACATION, AWAY,
+# COOKING — resolved from an entity this installation already has, published as
+# `binary_sensor.household_state_<slug>`, and defined entirely in the options
+# flow. QUIET is the built-in instance of exactly this shape (0.5.0, a
+# read-only mirror of a sleep-mode helper); this generalises it so a second
+# modifier is a form, not a release.
+#
+# IT IS STILL READ-ONLY, AND THAT IS THE WHOLE POINT. Defining a macro state
+# here does NOT create a helper, a toggle or anything writable: it names a
+# source and a state string, and publishes what that source says. Nothing here
+# can be turned on from a dashboard, because nothing here owns the fact — the
+# bound entity does. An installation that wants a flippable switch still wants
+# an `input_boolean`; what it no longer wants is the template sensor stack ON
+# TOP of that helper, which is what this replaces. See
+# docs/migrating-from-input-boolean-helpers.md.
+#
+# RULE 7. A MACRO STATE MOVES NO AXIS. It carries no severity, contributes to
+# no stage/directive/integrity resolution, and is absent from `sources_total`
+# and `confidence`. This is RULE 4's reasoning applied one layer out: the moment
+# a user-defined modifier can move stage, an installation can raise its own
+# household to Critical from a form, and the ramp stops meaning what const.py
+# says it means. A macro that ought to move an axis is a SOURCES row and a
+# ruling, not a config change.
+#
+# UNREADABLE IS NOT `off`. A macro whose source is missing, unavailable or
+# unknown publishes `None`, never False, and carries its disposition — the same
+# refusal as every other read in this component. A modifier that quietly reads
+# `off` because its helper was deleted is the dead-feed-reads-green defect
+# wearing a different name.
+OPT_MACROS = "macros"
+
+# Option keys that are NOT source bindings. __init__.py splits entry.options on
+# this set; a new non-binding option that forgets to land here is silently
+# handed to the coordinator as a binding for a source named after itself.
+NON_BINDING_OPTIONS = frozenset({"scan_interval", OPT_MACROS})
+
+# The state string a macro reads as `on` when the form leaves it blank.
+MACRO_DEFAULT_ON_STATE = "on"
+
+# A slug longer than this is not refused for a technical reason — it is refused
+# because it becomes an entity id somebody has to type into a template.
+MACRO_SLUG_MAX = 40
+
+# THE SLUG IS FROZEN AT CREATION AND THE EDIT FORM WILL NOT OFFER IT. Same
+# reasoning as #19 one level down: the slug is the tail of the macro's
+# unique_id AND, at first registration, of its published entity id, and Home
+# Assistant never reclaims an id. If the slug tracked the name, renaming
+# "Guest" to "Guests" would mint a second entity and orphan the one every
+# dashboard reads. So a rename changes the friendly name and nothing else.
+MACRO_RENAMEABLE_FIELDS = ("name", "entity_id", "on_state", "icon")
+
+# Slugs this integration already publishes on its own device, plus the three
+# axis names.
+#
+# `quiet` and `feed_health` are HARD collisions: they are binary_sensors on the
+# same device, so a macro slugged either one lands on `_2` and every surface
+# reading the original keeps reading the original. The three axis names are
+# reserved for a softer reason — `binary_sensor.household_state_stage` sitting
+# beside `sensor.household_state_stage`, answering a different question with a
+# different vocabulary, is a trap for whoever reads the dashboard next.
+RESERVED_MACRO_SLUGS = frozenset(
+    {"quiet", "feed_health", "stage", "directive", "integrity"}
+)
+
+
+def macro_slugify(value) -> str:
+    """A name -> the slug its entity id is built from.
+
+    Lowercase, every run of non-alphanumerics collapsed to one underscore,
+    edges trimmed. Deliberately NOT homeassistant.util.slugify: this value is
+    persisted in the config entry and compared against entity ids that already
+    exist, so it must not change when core's slugify does.
+    """
+    out = []
+    for ch in str(value or "").lower():
+        out.append(ch if ch.isalnum() and ch.isascii() else "_")
+    slug = "_".join(part for part in "".join(out).split("_") if part)
+    return slug[:MACRO_SLUG_MAX].rstrip("_")
+
+
+def normalize_macro(row) -> dict | None:
+    """One stored row -> the shape every reader uses, or None if unusable.
+
+    Returns None rather than a repaired row. The options flow is the only
+    thing that writes here and it validates before it does, so an unusable row
+    means the entry was hand-edited in `.storage`; guessing a slug for it would
+    publish an entity under a name nobody chose.
+    """
+    if not isinstance(row, dict):
+        return None
+    slug = macro_slugify(row.get("slug"))
+    if not slug or slug in RESERVED_MACRO_SLUGS:
+        return None
+    entity_id = row.get("entity_id")
+    if not isinstance(entity_id, str) or not entity_id.strip():
+        return None
+    name = row.get("name")
+    name = name.strip() if isinstance(name, str) and name.strip() else slug
+    on_state = row.get("on_state")
+    on_state = (
+        on_state.strip()
+        if isinstance(on_state, str) and on_state.strip()
+        else MACRO_DEFAULT_ON_STATE
+    )
+    icon = row.get("icon")
+    icon = icon.strip() if isinstance(icon, str) and icon.strip() else None
+    return {
+        "slug": slug,
+        "name": name,
+        "entity_id": entity_id.strip(),
+        "on_state": on_state,
+        "icon": icon,
+    }
+
+
+def normalize_macros(value) -> tuple:
+    """Every stored macro, in order, deduplicated by slug.
+
+    FIRST WINS on a duplicate slug, and the duplicate is dropped rather than
+    merged: two rows claiming one entity id would publish one entity whose
+    source depends on iteration order, which is the kind of fact that is only
+    discovered during an incident.
+    """
+    if not isinstance(value, (list, tuple)):
+        return ()
+    out = []
+    seen = set()
+    for row in value:
+        macro = normalize_macro(row)
+        if macro is None or macro["slug"] in seen:
+            continue
+        seen.add(macro["slug"])
+        out.append(macro)
+    return tuple(out)
+
+
+def macros_from_options(options) -> tuple:
+    """The macro states an entry declares."""
+    return normalize_macros((options or {}).get(OPT_MACROS))
+
+
+# The segment that tells a macro's registry row apart from every other entity
+# this integration publishes. `_quiet`, `_feed_health`, `_stage` and `_src_<x>`
+# carry no such segment, so a cleanup keyed on it cannot reach them.
+MACRO_UNIQUE_ID_PREFIX = "_macro_"
+
+
+def macro_unique_id(entry_id: str, slug: str) -> str:
+    """The unique_id one macro publishes under.
+
+    Defined HERE and not inline in binary_sensor.py because __init__.py reads
+    the same format to find the registry rows of macros that have been deleted.
+    Two copies of an id format is one copy that goes stale, and the failure it
+    produces — orphaned entities that are never cleaned up — is silent.
+    """
+    return entry_id + MACRO_UNIQUE_ID_PREFIX + slug
+
+
 PERIMETER_DWELL = 300  # seconds — the specified 5-minute dwell.
 
 # Same 300s this file already uses for PERIMETER_DWELL, and the same
