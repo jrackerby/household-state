@@ -330,6 +330,8 @@ BINDABLE = (
     ("boil_water", "entity_id", "binary_sensor", "Boil-water advisory (stage)"),
     ("boil_water_directive", "entity_id", "binary_sensor",
      "Boil-water advisory (directive)"),
+    ("outside_person", "entity_id", "binary_sensor",
+     "Person outside overnight (stage)"),
     ("nws_cap", "entity_id", "sensor", "CAP directive sensor"),
     ("fire_life_safety", "entity_id", "sensor", "Fire/life-safety health sensor"),
     ("security_device_health", "entity_id", "sensor", "Security health sensor"),
@@ -388,6 +390,17 @@ PERIMETER_DWELL = 300  # seconds — the specified 5-minute dwell.
 # minute").
 CONFIG_ENTRY_DWELL = 300  # seconds.
 PERIMETER_SEV = 2      # the stage bands: "Perimeter Open, Sustained" -> sev 2
+
+# A person seen by an outside camera overnight (#13). THE SAME LEVEL AS A
+# DOOR LEFT OPEN, by ruling: it is a thing to go and look at, not an
+# intruder — the alarm row owns the critical band for that. Which cameras
+# count as "outside", which hours count as "overnight" and how long the
+# finding holds after the last sighting are the installation's, on the
+# bound binary_sensor; this row reads its `on` and names what it saw.
+# RULE 3 keeps every dwell out of this file: a 5-minute hold on one row
+# would be a rise dwell on the fall side of a different sensor, which is
+# the sensor's own `delay_off` to declare.
+OUTSIDE_PERSON_SEV = PERIMETER_SEV
 
 # A boil-water advisory covering THIS service address. Top of the elevated
 # band (1-4), deliberately:
@@ -528,6 +541,25 @@ SOURCES = (
         "axis": AXIS_DIRECTIVE,
         "severity_when_on": BOIL_ADVISORY_SEV,
         "directive_when_on": DIRECTIVE_BOIL_WATER,
+    },
+    {
+        # A person seen by an outside camera overnight (#13). A binary
+        # hazard like boil_water, with one difference that is the whole
+        # point of it: the bound sensor carries `cameras`, the entity ids
+        # of the person-detection sensors that saw someone, and this row
+        # forwards them RAW into its detail — "seen: binary_sensor.x, ..."
+        # — the way the alarm row forwards Alarmo's open_sensors. A
+        # directive names WHICH, never THAT: "someone is outside" over a
+        # reading that knows it was the driveway is the unnamed-opening
+        # defect again. The surface humanises the ids at the render
+        # boundary; nothing here prettifies them.
+        "key": "outside_person",
+        "name": "Person Outside Overnight",
+        "entity_id": None,          # bind: outside_person.entity_id
+        "kind": "binary_hazard",
+        "axis": AXIS_STAGE,
+        "severity_when_on": OUTSIDE_PERSON_SEV,
+        "seen_attr": "cameras",
     },
     {
         # The directive axis's only source, DELIBERATELY. Reads the SAME
@@ -727,6 +759,9 @@ SOURCES = (
 TIEBREAK = (
     "alarm",
     "boil_water",
+    # Ties perimeter_open at 2; named first because a person seen is the
+    # more specific finding of the two, and the one to go and look at.
+    "outside_person",
     "perimeter_open",
     "local_nws",
     "ntas",

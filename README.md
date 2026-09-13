@@ -99,6 +99,7 @@ severity is read. Which entity supplies it is yours to say.
 | `alarm.entity_id` | alarm panel | `alarm_control_panel` |
 | `boil_water.entity_id` | boil-water advisory (STAGE) | `binary_sensor` |
 | `boil_water_directive.entity_id` | boil-water advisory (DIRECTIVE) | `binary_sensor` |
+| `outside_person.entity_id` | person seen by an outside camera overnight (STAGE, severity 2 — a door left open). Its `cameras` attribute, a list of entity ids, is forwarded as `seen: …` | `binary_sensor` |
 | `fire_life_safety.entity_id` | fire/life-safety health | `sensor` |
 | `security_device_health.entity_id` | security health | `sensor` |
 | `critical_networking_device_health.entity_id` | networking health | `sensor` |
