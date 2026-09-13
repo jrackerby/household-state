@@ -57,6 +57,19 @@ _DEFECT_STATES = frozenset(
 )
 
 
+def _id_list(value) -> list:
+    """A list of entity ids off an attribute, sorted, or [] for anything
+    that is not a list-shaped value. A dict is accepted as its keys (Alarmo's
+    open_sensors shape); a bare string is NOT split — an attribute that was
+    meant to be a list and arrived as text is a producer defect, and guessing
+    a delimiter for it is how a name gets torn in two."""
+    if isinstance(value, dict):
+        return sorted(str(k) for k in value)
+    if isinstance(value, (list, tuple, set)):
+        return sorted(str(x) for x in value)
+    return []
+
+
 class HouseholdStateCoordinator(DataUpdateCoordinator):
     """Reads every source, resolves, holds falls, persists ages.
 
@@ -306,12 +319,28 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             # for it is the dead-feed-reads-green substitution in a new coat. (unavailable,
             # unknown and missing were already handled above and never get
             # this far.)
+            #
+            # A row with `seen_attr` (#13) names WHAT the sensor saw: the
+            # attribute is a list of entity ids and is forwarded raw after
+            # "seen: ", the alarm row's "open: " shape, so a surface parses
+            # one list format for both. An empty or missing list still
+            # reads `on` at full severity — the hazard is the state, the
+            # names are the detail — and says only the row's name.
+            seen_attr = spec.get("seen_attr")
             if st.state == "on":
                 base["severity"] = spec["severity_when_on"]
-                base["detail"] = spec["name"] + " in effect for this address"
+                if seen_attr is None:
+                    base["detail"] = spec["name"] + " in effect for this address"
+                else:
+                    base["detail"] = spec["name"]
+                    ids = _id_list(st.attributes.get(seen_attr))
+                    if ids:
+                        base["detail"] += ", seen: " + ", ".join(ids)
             elif st.state == "off":
                 base["severity"] = 0
-                base["detail"] = "no " + spec["name"].lower() + " for this address"
+                base["detail"] = "no " + spec["name"].lower()
+                if seen_attr is None:
+                    base["detail"] += " for this address"
             else:
                 base["disposition"] = DISP_UNPARSED
                 base["detail"] = "unrecognised binary state: " + str(st.state)
