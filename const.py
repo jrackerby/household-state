@@ -718,8 +718,15 @@ SOURCES = (
 # Tiebreak, label only — it never changes the severity, only which
 # driver gets named. FLS is absent from this list because RULE 6 puts it
 # on a different axis entirely.
+#
+# EVERY AXIS_STAGE ROW MUST BE HERE, AND THE SUITE ASSERTS IT (#12).
+# resolve() walks THIS tuple, not SOURCES, so a stage row whose key is
+# missing from it is read every poll, publishes its own severity on its
+# own source sensor, and never moves STAGE at all. boil_water shipped that
+# way: severity 4 on its sensor, STAGE normal, for as long as it was live.
 TIEBREAK = (
     "alarm",
+    "boil_water",
     "perimeter_open",
     "local_nws",
     "ntas",
