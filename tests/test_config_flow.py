@@ -646,6 +646,46 @@ def test_every_step_and_error_the_flow_can_return_has_a_translation():
         assert key in declared_errors, f"{key} has no string"
 
 
+def test_no_translation_string_reads_as_html():
+    """hassfest REJECTS THIS AND THE SUITE DID NOT, WHICH IS THE ACTUAL BUG
+    HERE. `<name>` as a placeholder in prose matches hassfest's
+    `string_no_html` and fails the manifest validation job — after a push,
+    minutes later, in a job that says nothing about which string it was until
+    you open its log. The rule is cheap to state locally, so state it.
+
+    The pattern is hassfest's own (`script/hassfest/translations.py`,
+    `string_no_html`), reproduced rather than tightened: a stricter "no angle
+    bracket anywhere" would refuse a legitimate `> 5` in a future string and
+    the failure would then be this file's rather than hassfest's.
+    """
+    import re
+
+    html = re.compile(r"<[a-z][\s\S]*>")
+    translations = json.loads(
+        (ROOT / "translations" / "en.json").read_text(encoding="utf-8")
+    )
+
+    def walk(node, path=""):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                yield from walk(value, f"{path}.{key}" if path else key)
+        elif isinstance(node, str):
+            yield path, node
+
+    offenders = [path for path, text in walk(translations) if html.search(text)]
+    assert not offenders, f"hassfest will reject: {offenders}"
+
+
+def test_the_html_gate_can_fail():
+    """A gate that cannot go red is not a gate. This is the exact string that
+    failed hassfest on the first push of the macro-state flow."""
+    import re
+
+    html = re.compile(r"<[a-z][\s\S]*>")
+    assert html.search("Becomes binary_sensor.household_state_<name>, frozen.")
+    assert not html.search("Poll interval (seconds)")
+
+
 def test_every_macro_form_field_is_labelled():
     """An unlabelled field renders as its raw key — `on_state` rather than
     "State that means on" — which is exactly the kind of thing that is obvious

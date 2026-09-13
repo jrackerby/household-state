@@ -46,7 +46,7 @@
           "icon": "Icon (optional)"
         },
         "data_description": {
-          "name": "Becomes binary_sensor.household_state_<name>, fixed at creation. Up to {max} characters.",
+          "name": "Becomes the entity id — the name, lowercased, with each run of anything else turned into an underscore. Fixed at creation. Up to {max} characters.",
           "entity_id": "Any entity: an input_boolean helper, a schedule, a person, a select.",
           "on_state": "Matched exactly and case-sensitively against the entity's state. \"on\" for a helper or a schedule; \"not_home\" for a person; whatever option you chose for a select.",
           "icon": "An mdi: icon, for example mdi:account-group."
@@ -77,7 +77,7 @@
       },
       "macro_remove": {
         "title": "Delete a macro state",
-        "description": "The entity is removed from the registry, not left behind as an unavailable row — so anything still reading binary_sensor.household_state_<name> stops resolving.",
+        "description": "The entity is removed from the registry, not left behind as an unavailable row — so anything still reading this macro state stops resolving. Its id is freed, so re-adding the same macro later gets the same id back.",
         "data": {
           "slug": "Macro state",
           "confirm": "Yes, delete it"
