@@ -306,17 +306,21 @@ CAP_ABSENT = "__absent__"
 # ---------------------------------------------------------------------
 PERIMETER_LABEL = None          # bind: perimeter.label
 
-# THE LABEL THAT MARKS A DEVICE OR ENTITY AS OPTIONAL TO INTEGRITY (#26).
-# A device whose normal OFF state reads `unavailable` -- a TV, a remote, a
-# battery camera -- is indistinguishable, by shape, from a dead integration,
-# and the config-entry row keys on shape alone. A domain allowlist would be
-# the wrong fix twice over: it names integrations in a row whose contract is
-# to name none, and it grows forever. So the operator says which devices are
-# optional, in the HA UI, with a label -- exactly how the perimeter and the
-# security cameras are discovered -- and the row publishes what it declined
-# under `suppressed`, always present, never silently. Matched against the
-# label id first and the name second, like PERIMETER_LABEL. Bindable.
-INTEGRITY_OPTIONAL_LABEL = "integrity_optional"   # bind: config_entry_health.label
+# THE LABEL THAT PUTS A DEVICE OR ENTITY IN SCOPE FOR INTEGRITY (#28).
+# OPT-IN, RULED BY JOEL, REVERSING #26'S OPT-OUT: the config-entry row
+# watches ONLY what carries this label, or sits on a device that does.
+# Anything unlabelled is not this row's business. The earlier premise --
+# every config entry, generically, with an opt-out for devices whose off
+# state reads `unavailable` -- meant a powered-off TV faulted until somebody
+# labelled it out, and the set of things to label out grows forever; the
+# set of things the household DEPENDS ON is the shorter list and the one
+# the contract names. Discovered the way the perimeter and the security
+# cameras are: a relabel, never a code change. Matched against the label
+# id first and the name second, like PERIMETER_LABEL. Bindable.
+#
+# A label that does not resolve, or resolves to nothing, is `absent`, not
+# `ok`: a monitor with no scope is a blind spot that reads green.
+INTEGRITY_SCOPE_LABEL = "integrity_watched"   # bind: config_entry_health.label
 
 # ------------------------------------------------------------------ BINDINGS
 #
@@ -365,7 +369,7 @@ BINDABLE_TEXT = (
     ("notify_health", "service_domain", "Notify service domain"),
     ("notify_health", "service", "Notify service name"),
     (BIND_PERIMETER, "label", "Perimeter label"),
-    ("config_entry_health", "label", "Integrity-optional device label"),
+    ("config_entry_health", "label", "Integrity scope label (devices watched)"),
 )
 
 
@@ -885,16 +889,16 @@ SOURCES = (
         # 2026-08-13 — found only because an unrelated restart moved a
         # count elsewhere), OR sit in `setup_retry` outright, which HA
         # reports directly. THE SIGNAL KEYS ON THE SHAPE, NEVER ONE
-        # INTEGRATION — every loaded entry's owned-entity unavailable
-        # ratio is computed generically off the entity registry, and
-        # every entry already in setup_retry is read directly off
+        # INTEGRATION — a watched entry's in-scope unavailable ratio is
+        # computed generically off the entity registry, and a watched
+        # entry already in setup_retry is read directly off
         # config_entries. Neither path names a domain.
         #
-        # THE ONE EXCLUSION IS THE OPERATOR'S, NOT THIS FILE'S (#26): an
-        # entity carrying INTEGRITY_OPTIONAL_LABEL, or on a device that
-        # does, is left out of the ratio, and an entry with nothing else
-        # left is skipped and NAMED under `suppressed` -- a powered-off TV
-        # is not a dead integration, and a label says which is which.
+        # THE SCOPE IS THE OPERATOR'S, NOT THIS FILE'S (#28, opt-in,
+        # reversing #26): an entry is watched when it owns an entity
+        # carrying INTEGRITY_SCOPE_LABEL or on a device that does, and the
+        # ratio runs over those entities alone. No label, no scope, and no
+        # scope is `absent` -- never a hollow `ok`.
         "key": "config_entry_health",
         "name": "Config Entry Health",
         "entity_id": None,

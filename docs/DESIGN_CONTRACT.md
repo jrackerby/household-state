@@ -44,6 +44,11 @@ Precedence, most urgent first: EVACUATE > SHELTER > SECURE > BOIL_WATER > none.
   SCREEN IS SHOWING** (Joel, ruling, jrackerby/HA#717). The board SERVER dark is
   an integrity fault; a panel on the wrong page is its own integration's
   finding, published there.
+- **INTEGRITY'S CONFIG-ENTRY SCOPE IS OPT-IN** (Joel, ruling, #28, reversing
+  #26's opt-out): a label (`integrity_watched`, bindable) puts a device or
+  entity IN scope; anything unlabelled is not the row's business under any
+  shape. A label that does not resolve, or that nothing carries, is `absent`,
+  never `ok` - a monitor with no scope must not read green.
 - **Fall dwell, never rise dwell. Losing sight of a source counts as a fall.**
 - **`ok at zero` and `could not read` are different values at the source**;
   `absent` and `unreachable` do not collapse.

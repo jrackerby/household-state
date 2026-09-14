@@ -117,20 +117,20 @@ entity means.
       both pre-dwelled by `kiosk_pi`'s own coordinator
       (`LIVE_PAGE_DIVERGE_DWELL`, `TRANSPORT_FAIL_DWELL`); this row does
       no re-thresholding of its own.
-    - `config_entry_health` — every `hass.config_entries.async_entries()`
-      entry, generic across every domain: `setup_retry` outright, or
-      `loaded` with 100% of owned entities unavailable (never a partial
-      ratio). `CONFIG_ENTRY_DWELL` (300s, `const.py`) holds a fresh bad
+    - `config_entry_health` — the config entries the operator put IN
+      SCOPE (#28, opt-in): an entry is watched when it owns an entity
+      carrying the `integrity_watched` label (bindable,
+      `config_entry_health.label`) or sitting on a device that does, and
+      only those entities form the ratio. Two shapes, generic across every
+      domain: `setup_retry` outright, or `loaded` with 100% of in-scope
+      entities unavailable (never a partial ratio). A label that does not
+      resolve, or that nothing carries, reads `absent` — never a hollow
+      `ok`. `CONFIG_ENTRY_DWELL` (300s, `const.py`) holds a fresh bad
       reading before it counts — the one INTEGRITY row with no upstream
       dwell of its own, so without this a normal ~60-90s restart window
-      would page Joel before HA finished starting.
-      The one exclusion is the operator's (#26): an entity carrying the
-      `integrity_optional` label (bindable, `config_entry_health.label`),
-      or on a device that does, is left out of the ratio, and an entry
-      with nothing else left is skipped under both shapes and named in
-      `suppressed` — always present on the row's sensor and on
-      `sensor.household_state_integrity`. `affected_entries` carries the
-      full finding list; `integrity_detail` is only its headline.
+      would page Joel before HA finished starting. `affected_entries`
+      carries the full finding list (`integrity_detail` is only its
+      headline); `watched_count` / `unwatched_count` state the scope's size.
     - `notify_health` — `services.has_service("notify",
       "mobile_app_joels_iphone")`, the notify target
       `packages/household_state_integrity_notify.yaml` hardcodes. Catches

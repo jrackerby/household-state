@@ -31,7 +31,7 @@ from .const import (
     FALL_DWELL,
     INTEGRITY_DEGRADED,
     INTEGRITY_OK,
-    INTEGRITY_OPTIONAL_LABEL,
+    INTEGRITY_SCOPE_LABEL,
     normalize_macros,
     PERIMETER_DWELL,
     PERIMETER_LABEL,
@@ -696,27 +696,26 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._warn_once(spec["key"], "")
         return base
 
-    def _optional_label_id(self):
-        """The label id that marks a device or entity integrity-optional
-        (#26), or None when no such label exists.
+    def _scope_label(self):
+        """The label whose carriers ARE integrity's scope (#28), after binding.
 
-        ABSENCE IS NORMAL AND LOGS NOTHING. The default name exists only
-        where an operator created it; an installation with no optional
-        devices never makes the label and is not misconfigured. That is
-        the opposite of the perimeter label, which MUST resolve — a
-        perimeter with no label is a house with no doors, an optional
-        set with no label is an empty set.
+        Returns (wanted, label_id). `label_id` is None when the label does
+        not resolve — which, unlike the optional label this replaces, is a
+        CONFIG DEFECT and not an empty set: a row that watches only what is
+        labelled, with no label, watches nothing and would read `ok` over
+        a blind spot. The caller reports it `absent`, the way the perimeter
+        does with its own label.
         """
-        wanted = self._bound("config_entry_health", "label", INTEGRITY_OPTIONAL_LABEL)
+        wanted = self._bound("config_entry_health", "label", INTEGRITY_SCOPE_LABEL)
         if wanted is None:
-            return None
+            return None, None
         lreg = lr.async_get(self.hass)
         label = lreg.async_get_label(wanted)
         if label is None:
             label = lreg.async_get_label_by_name(wanted)
-        return None if label is None else label.label_id
+        return wanted, (None if label is None else label.label_id)
 
-    def _entity_is_optional(self, entry, label_id) -> bool:
+    def _entity_in_scope(self, entry, label_id) -> bool:
         """Carries the label itself, or sits on a device that does."""
         if label_id in (getattr(entry, "labels", None) or ()):
             return True
@@ -726,54 +725,79 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         device = dr.async_get(self.hass).async_get(device_id)
         return device is not None and label_id in (device.labels or ())
 
-    def _entry_unavailable_ratio(self, entry_id, label_id=None):
-        """(unavailable, total, optional) owned entities for one config entry.
+    def _entry_unavailable_ratio(self, entry_id, label_id):
+        """(unavailable, total) IN-SCOPE owned entities for one config entry.
 
-        total==0 is vacuously healthy, never a finding — an integration
-        that creates no entities is not this row's business.
-
-        `optional` counts the entities the operator labelled out (#26);
-        they are in neither `unavailable` nor `total`. An entry whose
-        every entity is optional therefore reads total==0 here, and the
-        caller tells that apart from "creates no entities" by optional>0.
+        Only entities carrying the scope label, or on a device that does,
+        are counted (#28). total==0 therefore means "nothing here is
+        watched" and the entry is out of scope — never a finding, whatever
+        shape the entry is in.
         """
         ereg = er.async_get(self.hass)
         total = 0
         unavailable = 0
-        optional = 0
         for e in er.async_entries_for_config_entry(ereg, entry_id):
-            if label_id is not None and self._entity_is_optional(e, label_id):
-                optional += 1
+            if not self._entity_in_scope(e, label_id):
                 continue
             st = self.hass.states.get(e.entity_id)
             total += 1
             if st is None or st.state == "unavailable":
                 unavailable += 1
-        return unavailable, total, optional
+        return unavailable, total
 
     def _read_config_entries(self, spec, base):
-        """Two shapes, both generic across every domain:
+        """Two shapes, both generic across every domain, over the entries
+        the operator put IN SCOPE (#28, opt-in):
 
           setup_retry     HA already says so outright.
           loaded + dead    a config entry can read `loaded` while every
                            entity it owns reads unavailable (one live
-                           case ran 2h25m, found only by accident). total==0 is
-                           excluded — see _entry_unavailable_ratio.
+                           case ran 2h25m, found only by accident).
 
-        THE SIGNAL KEYS ON THE SHAPE, NEVER ONE INTEGRATION: no domain is
-        named anywhere in this function. The one exclusion is the
-        operator's label (#26, _optional_label_id): an entry with nothing
-        but optional entities is skipped under BOTH shapes — a powered-off
-        device is allowed to be in setup_retry as much as it is allowed to
-        be unavailable — and named under `suppressed`, so the declined
-        signal is readable on the entity rather than vanishing.
-        CONFIG_ENTRY_DWELL holds a fresh
-        `bad` reading for 300s before it counts, because this row —
-        unlike every other INTEGRITY row — reads raw framework state with
-        no upstream dwell of its own, and a core restart's ~60-90s window
-        of entries still starting up would otherwise page an operator before HA
-        finished booting.
+        An entry is watched when at least one entity it owns carries the
+        scope label or sits on a device that does; the ratio runs over
+        those entities alone. THE SIGNAL KEYS ON THE SHAPE, NEVER ONE
+        INTEGRATION: no domain is named anywhere in this function — the
+        scope is a label the operator applies, and an unlabelled entry is
+        not this row's business under either shape. A label that does not
+        resolve, or resolves to nothing watched, is `absent`: a monitor
+        with no scope must never read `ok`.
+
+        CONFIG_ENTRY_DWELL holds a fresh `bad` reading for 300s before it
+        counts, because this row — unlike every other INTEGRITY row —
+        reads raw framework state with no upstream dwell of its own, and a
+        core restart's ~60-90s window of entries still starting up would
+        otherwise page an operator before HA finished booting.
         """
+        try:
+            wanted, label_id = self._scope_label()
+        except Exception as exc:  # noqa: BLE001 — RULE 1
+            self._warn_once(
+                "cfgentry_label",
+                "registry_error",
+                "integrity scope label lookup failed: " + str(exc),
+            )
+            base["disposition"] = DISP_ABSENT
+            base["detail"] = "integrity scope label unreadable"
+            return base
+
+        if wanted is None:
+            base["disposition"] = DISP_ABSENT
+            base["detail"] = "not configured: bind config_entry_health.label"
+            self._warn_once(
+                spec["key"], "unbound",
+                "integrity scope has no label bound (Configure -> config_entry_health.label)",
+            )
+            return base
+        if label_id is None:
+            base["disposition"] = DISP_ABSENT
+            base["detail"] = "label " + wanted + " does not resolve"
+            self._warn_once(
+                spec["key"], "label_absent",
+                "integrity scope label " + wanted + " does not resolve",
+            )
+            return base
+
         try:
             entries = self.hass.config_entries.async_entries()
         except Exception as exc:  # noqa: BLE001 — RULE 1
@@ -786,44 +810,31 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["detail"] = "config_entries registry unreadable"
             return base
 
-        # The label lookup is inside the RULE 1 guard like every other
-        # registry read here: a label-registry API that moves under a core
-        # upgrade must degrade to "nothing optional", never to no reading.
-        try:
-            label_id = self._optional_label_id()
-        except Exception as exc:  # noqa: BLE001 — RULE 1
-            self._warn_once(
-                "cfgentry_label",
-                "registry_error",
-                "integrity-optional label lookup failed: " + str(exc),
-            )
-            label_id = None
-
         now = dt_util.utcnow()
         sustained = []
-        suppressed = []
         watched = 0
+        unwatched = 0
         for entry in entries:
             try:
                 if entry.disabled_by is not None:
                     continue
 
-                unavailable, total, optional = self._entry_unavailable_ratio(
+                unavailable, total = self._entry_unavailable_ratio(
                     entry.entry_id, label_id
                 )
-                if optional > 0 and total == 0:
-                    # Everything this entry owns is optional: whatever shape
-                    # it is in is the operator's stated expectation. Marked
-                    # `ok` so a label removed later starts the dwell fresh.
+                if total == 0:
+                    # Nothing this entry owns is labelled: out of scope,
+                    # whatever shape it is in. Marked `ok` so a label
+                    # applied later starts the dwell fresh.
                     self._mark("cfgentry:" + entry.entry_id, "ok")
-                    suppressed.append(entry.title + " (" + entry.domain + ")")
+                    unwatched += 1
                     continue
                 watched += 1
 
                 is_retry = entry.state == ConfigEntryState.SETUP_RETRY
                 reason = "setup_retry" if is_retry else None
                 if entry.state == ConfigEntryState.LOADED and not is_retry:
-                    if total > 0 and unavailable == total:
+                    if unavailable == total:
                         reason = "all " + str(total) + " entities unavailable"
 
                 since = self._mark("cfgentry:" + entry.entry_id, reason or "ok")
@@ -843,14 +854,25 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 )
                 continue
 
+        if watched == 0:
+            # The label exists and nothing carries it. A row with no scope
+            # reading `ok` is the blind spot that reads green.
+            base["disposition"] = DISP_ABSENT
+            base["detail"] = "no device or entity carries label " + wanted
+            base["watched_count"] = 0
+            base["unwatched_count"] = unwatched
+            self._warn_once(
+                spec["key"], "label_empty",
+                "integrity scope label " + wanted + " resolves to zero watched entries",
+            )
+            return base
+
         base["watched_count"] = watched
+        base["unwatched_count"] = unwatched
         # The whole list, not just the first (#26). `integrity_detail` is a
         # one-line headline for the roll-up; "+2 more" in it left the other
         # two unreadable anywhere on the entity.
         base["affected_entries"] = list(sustained)
-        # Always present, like the directive's: an empty list says "nothing
-        # declined", a missing key would say nothing at all.
-        base["suppressed"] = suppressed
         if sustained:
             more = ""
             if len(sustained) > 1:
@@ -864,7 +886,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         base["disposition"] = DISP_OK
         base["integrity"] = INTEGRITY_OK
-        base["integrity_detail"] = "all " + str(watched) + " config entries healthy"
+        base["integrity_detail"] = "all " + str(watched) + " watched config entries healthy"
         self._warn_once(spec["key"], "")
         return base
 
