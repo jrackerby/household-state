@@ -189,6 +189,8 @@ def install() -> None:
             super().__init__(**kw)
 
     dr.DeviceInfo = DeviceInfo
+    # The config-entry row asks a device for its labels (#26).
+    dr.async_get = lambda hass: hass.device_registry
 
     const = mod("homeassistant.const")
 
@@ -253,12 +255,30 @@ class FakeStates:
 
 class FakeRegistryEntry:
     def __init__(self, entity_id, platform=None, unique_id=None, labels=(),
-                 config_entry_id=None):
+                 config_entry_id=None, device_id=None):
         self.entity_id = entity_id
         self.platform = platform
         self.unique_id = unique_id
         self.labels = labels
         self.config_entry_id = config_entry_id
+        self.device_id = device_id
+
+
+class FakeDevice:
+    def __init__(self, device_id, labels=()):
+        self.id = device_id
+        self.labels = set(labels)
+
+
+class FakeDeviceRegistry:
+    """`dr.async_get(hass)`, reduced to the one lookup the integrity row
+    makes: a device's labels by its id."""
+
+    def __init__(self, devices=()):
+        self.devices = {d.id: d for d in devices}
+
+    def async_get(self, device_id):
+        return self.devices.get(device_id)
 
 
 class FakeEntityRegistry:
@@ -321,10 +341,11 @@ class FakeConfigEntry:
 
 class FakeHass:
     def __init__(self, states=None, entity_registry=None, label_registry=None,
-                 services=None, config_entries=None):
+                 services=None, config_entries=None, device_registry=None):
         self.states = FakeStates(states)
         self.entity_registry = entity_registry or FakeEntityRegistry()
         self.label_registry = label_registry or FakeLabelRegistry()
+        self.device_registry = device_registry or FakeDeviceRegistry()
         self.services = services if services is not None else FakeServices()
         self.config_entries = (
             config_entries if config_entries is not None else FakeConfigEntries()

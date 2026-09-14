@@ -106,6 +106,7 @@ severity is read. Which entity supplies it is yours to say.
 | `notify_health.last_sent_entity_id` | last successful send | `sensor` |
 | `quiet.entity_id` | sleep-mode helper (QUIET) | `input_boolean` |
 | `perimeter.label` | label whose members are the perimeter | text |
+| `config_entry_health.label` | label marking a device or entity **integrity-optional** — its normal off-state is `unavailable` (a TV, a remote), so it leaves the config-entry ratio and an entry with nothing else left is skipped and named under `suppressed`; defaults to `integrity_optional`, and the label only needs to exist where one is used | text |
 
 **Leaving one blank is not the same as pointing it at nothing.** A blank
 binding falls through to the row's own default; an id that does not resolve

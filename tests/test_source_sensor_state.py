@@ -126,6 +126,24 @@ def test_detail_falls_back_to_integrity_detail():
     )
 
 
+def test_the_full_finding_list_and_the_declined_set_are_attributes():
+    """#26: `detail` is the headline; "+N more" in it is readable in full
+    here, and what the row declined is a list that is never absent."""
+    s = _sensor(
+        {
+            "disposition": DISP_OK,
+            "integrity": INTEGRITY_DEGRADED,
+            "integrity_detail": "A (a): setup_retry +1 more",
+            "affected_entries": ["A (a): setup_retry", "B (b): setup_retry"],
+            "suppressed": ["Main Bed LGTV (webostv)"],
+        }
+    )
+    a = s.extra_state_attributes
+    assert a["affected_entries"] == ["A (a): setup_retry", "B (b): setup_retry"]
+    assert a["suppressed"] == ["Main Bed LGTV (webostv)"]
+    assert _sensor({"disposition": DISP_OK}).extra_state_attributes["suppressed"] == []
+
+
 def test_an_explicit_detail_is_not_overwritten_by_the_fallback():
     s = _sensor(
         {
