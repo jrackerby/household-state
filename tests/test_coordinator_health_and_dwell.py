@@ -23,8 +23,11 @@ from household_state.coordinator import HouseholdStateCoordinator
 from ha_stubs import (
     FakeConfigEntries,
     FakeConfigEntry,
+    FakeDevice,
+    FakeDeviceRegistry,
     FakeEntityRegistry,
     FakeHass,
+    FakeLabelRegistry,
     FakeRegistryEntry,
     FakeState,
 )
@@ -32,10 +35,13 @@ from ha_stubs import (
 CFG_SPEC = [s for s in SOURCES if s["kind"] == "config_entries"][0]
 
 
-def coordinator(states=None, entries=(), registry=None):
-    hass = FakeHass(states, registry or FakeEntityRegistry())
+def coordinator(states=None, entries=(), registry=None, labels=(), devices=(),
+                bindings=None):
+    hass = FakeHass(states, registry or FakeEntityRegistry(),
+                    label_registry=FakeLabelRegistry(labels),
+                    device_registry=FakeDeviceRegistry(devices))
     hass.config_entries = FakeConfigEntries(entries)
-    c = HouseholdStateCoordinator(hass, 3)
+    c = HouseholdStateCoordinator(hass, 3, bindings=bindings)
     c.async_arm_logging()
     return c
 
@@ -187,6 +193,191 @@ def test_several_sustained_faults_are_counted_and_the_first_is_named():
     r = c._read_source(CFG_SPEC)
     assert r["affected"] == 2
     assert "+1 more" in r["integrity_detail"]
+
+
+def test_every_sustained_fault_is_published_in_full():
+    """`integrity_detail` is a headline; "+N more" in it left the other N
+    unreadable anywhere on the entity (#26). The full list is an attribute."""
+    entries = [
+        FakeConfigEntry("e1", domain="a", title="A", state="setup_retry"),
+        FakeConfigEntry("e2", domain="b", title="B", state="setup_retry"),
+        FakeConfigEntry("e3", domain="c", title="C", state="setup_retry"),
+    ]
+    c = coordinator(entries=entries)
+    c._read_source(CFG_SPEC)
+    for e in entries:
+        _age(c, "cfgentry:" + e.entry_id, CONFIG_ENTRY_DWELL + 1)
+    r = c._read_source(CFG_SPEC)
+    assert "+2 more" in r["integrity_detail"]
+    assert r["affected_entries"] == [
+        "A (a): setup_retry", "B (b): setup_retry", "C (c): setup_retry",
+    ]
+
+
+def test_affected_entries_and_suppressed_are_always_present():
+    r = coordinator(entries=[FakeConfigEntry("e1")])._read_source(CFG_SPEC)
+    assert r["affected_entries"] == []
+    assert r["suppressed"] == []
+
+
+# ------------------------------------------------ the optional label (#26)
+
+def _tv(label_on="device", label="integrity_optional"):
+    """One webOS-shaped entry: two entities on one device, both unavailable
+    because the TV is off. The label sits on the device, or on each entity,
+    or nowhere."""
+    dev_labels = (label,) if label_on == "device" else ()
+    ent_labels = (label,) if label_on == "entity" else ()
+    registry = FakeEntityRegistry([
+        FakeRegistryEntry("media_player.tv", config_entry_id="tv",
+                          device_id="d-tv", labels=ent_labels),
+        FakeRegistryEntry("remote.tv", config_entry_id="tv",
+                          device_id="d-tv", labels=ent_labels),
+    ])
+    return registry, [FakeDevice("d-tv", labels=dev_labels)]
+
+
+def _aged_read(c):
+    c._read_source(CFG_SPEC)
+    _age(c, "cfgentry:tv", CONFIG_ENTRY_DWELL + 1)
+    return c._read_source(CFG_SPEC)
+
+
+def test_an_unlabelled_off_tv_is_a_fault_by_shape():
+    """The control: without the label the TV is exactly the UPS case above.
+    The label is what tells them apart, so its absence must still fault."""
+    registry, devices = _tv(label_on="none")
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "remote.tv": FakeState("unavailable")},
+                    entries=[FakeConfigEntry("tv", domain="webostv", title="Main Bed LGTV")],
+                    registry=registry, labels=("integrity_optional",), devices=devices)
+    r = _aged_read(c)
+    assert r["integrity"] == INTEGRITY_DEGRADED
+    assert r["suppressed"] == []
+
+
+def test_a_device_label_makes_an_off_tv_optional_and_names_it():
+    registry, devices = _tv(label_on="device")
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "remote.tv": FakeState("unavailable")},
+                    entries=[FakeConfigEntry("tv", domain="webostv", title="Main Bed LGTV")],
+                    registry=registry, labels=("integrity_optional",), devices=devices)
+    r = _aged_read(c)
+    assert r["integrity"] == INTEGRITY_OK
+    assert r["suppressed"] == ["Main Bed LGTV (webostv)"]
+    assert r["watched_count"] == 0, "a suppressed entry is not a watched one"
+
+
+def test_an_entity_label_works_the_same_as_a_device_label():
+    registry, devices = _tv(label_on="entity")
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "remote.tv": FakeState("unavailable")},
+                    entries=[FakeConfigEntry("tv", domain="webostv", title="Main Bed LGTV")],
+                    registry=registry, labels=("integrity_optional",), devices=devices)
+    r = _aged_read(c)
+    assert r["integrity"] == INTEGRITY_OK
+    assert r["suppressed"] == ["Main Bed LGTV (webostv)"]
+
+
+def test_the_label_covers_setup_retry_too():
+    """A powered-off device is allowed to be in setup_retry as much as it is
+    allowed to be unavailable: integrations that raise ConfigEntryNotReady on
+    an unreachable device take that shape, and the label is about the
+    device, not about which shape its integration chose."""
+    registry, devices = _tv(label_on="device")
+    c = coordinator(entries=[FakeConfigEntry("tv", domain="webostv",
+                                             title="Main Bed LGTV", state="setup_retry")],
+                    registry=registry, labels=("integrity_optional",), devices=devices)
+    r = _aged_read(c)
+    assert r["integrity"] == INTEGRITY_OK
+    assert r["suppressed"] == ["Main Bed LGTV (webostv)"]
+
+
+def test_a_partly_optional_entry_is_judged_on_what_is_left():
+    """A hub entry with one optional device and one that is not: the optional
+    one leaves the ratio, and the rest is judged as if it were the whole."""
+    registry = FakeEntityRegistry([
+        FakeRegistryEntry("media_player.tv", config_entry_id="hub", device_id="d-tv"),
+        FakeRegistryEntry("sensor.hub_uptime", config_entry_id="hub", device_id="d-hub"),
+    ])
+    devices = [FakeDevice("d-tv", labels=("integrity_optional",)), FakeDevice("d-hub")]
+    entries = [FakeConfigEntry("hub", domain="x", title="Hub")]
+
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "sensor.hub_uptime": FakeState("unavailable")},
+                    entries=entries, registry=registry,
+                    labels=("integrity_optional",), devices=devices)
+    c._read_source(CFG_SPEC)
+    _age(c, "cfgentry:hub", CONFIG_ENTRY_DWELL + 1)
+    r = c._read_source(CFG_SPEC)
+    assert r["integrity"] == INTEGRITY_DEGRADED
+    assert "all 1 entities unavailable" in r["integrity_detail"]
+    assert r["suppressed"] == [], "a partly optional entry is still watched"
+
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "sensor.hub_uptime": FakeState("42")},
+                    entries=entries, registry=registry,
+                    labels=("integrity_optional",), devices=devices)
+    c._read_source(CFG_SPEC)
+    _age(c, "cfgentry:hub", CONFIG_ENTRY_DWELL + 1)
+    assert c._read_source(CFG_SPEC)["integrity"] == INTEGRITY_OK
+
+
+def test_an_entry_with_no_entities_is_not_confused_with_an_all_optional_one():
+    """total==0 has two causes now: nothing owned, or everything optional.
+    Only the second is named under `suppressed`."""
+    r = coordinator(entries=[FakeConfigEntry("e1", title="Empty")],
+                    labels=("integrity_optional",))._read_source(CFG_SPEC)
+    assert r["suppressed"] == []
+    assert r["watched_count"] == 1
+
+
+def test_a_missing_label_suppresses_nothing_and_logs_nothing(caplog):
+    """The label exists only where an operator made it. An installation with
+    no optional devices is not misconfigured."""
+    registry, devices = _tv(label_on="device")
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "remote.tv": FakeState("unavailable")},
+                    entries=[FakeConfigEntry("tv", domain="webostv", title="Main Bed LGTV")],
+                    registry=registry, labels=(), devices=devices)
+    r = _aged_read(c)
+    assert r["integrity"] == INTEGRITY_DEGRADED
+    assert r["suppressed"] == []
+    assert "label" not in caplog.text.lower()
+
+
+def test_the_optional_label_follows_its_binding():
+    """`config_entry_health.label` renames the label the row honours."""
+    registry, devices = _tv(label_on="device", label="tv_off_is_fine")
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "remote.tv": FakeState("unavailable")},
+                    entries=[FakeConfigEntry("tv", domain="webostv", title="Main Bed LGTV")],
+                    registry=registry, labels=("tv_off_is_fine",), devices=devices,
+                    bindings={"config_entry_health.label": "tv_off_is_fine"})
+    r = _aged_read(c)
+    assert r["integrity"] == INTEGRITY_OK
+    assert r["suppressed"] == ["Main Bed LGTV (webostv)"]
+
+
+def test_a_broken_label_registry_degrades_to_nothing_optional():
+    """RULE 1: the label lookup cannot take the row down."""
+    class Broken:
+        def async_get_label(self, _):
+            raise RuntimeError("label registry moved")
+
+        def async_get_label_by_name(self, _):
+            raise RuntimeError("label registry moved")
+
+    registry, devices = _tv(label_on="device")
+    c = coordinator({"media_player.tv": FakeState("unavailable"),
+                     "remote.tv": FakeState("unavailable")},
+                    entries=[FakeConfigEntry("tv", domain="webostv", title="Main Bed LGTV")],
+                    registry=registry, devices=devices)
+    c.hass.label_registry = Broken()
+    r = _aged_read(c)
+    assert r["disposition"] == DISP_OK
+    assert r["integrity"] == INTEGRITY_DEGRADED
+    assert r["suppressed"] == []
 
 
 def test_one_bad_entry_never_takes_the_row_down():

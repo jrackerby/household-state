@@ -168,6 +168,15 @@ def test_the_integrity_sensor_carries_the_per_source_breakdown():
     ]
 
 
+def test_the_integrity_sensor_always_publishes_suppressed():
+    """#26: [] when nothing was declined, never absent."""
+    ent = IntegritySensor(FakeCoordinator({"integrity": "ok"}), ENTRY_ID)
+    assert ent.extra_state_attributes["suppressed"] == []
+    ent = IntegritySensor(
+        FakeCoordinator({"integrity_suppressed": ["Main Bed LGTV (webostv)"]}), ENTRY_ID)
+    assert ent.extra_state_attributes["suppressed"] == ["Main Bed LGTV (webostv)"]
+
+
 # ========================================================== feed health
 
 def test_feed_health_is_a_problem_when_any_source_is_unreadable():

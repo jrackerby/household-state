@@ -306,6 +306,18 @@ CAP_ABSENT = "__absent__"
 # ---------------------------------------------------------------------
 PERIMETER_LABEL = None          # bind: perimeter.label
 
+# THE LABEL THAT MARKS A DEVICE OR ENTITY AS OPTIONAL TO INTEGRITY (#26).
+# A device whose normal OFF state reads `unavailable` -- a TV, a remote, a
+# battery camera -- is indistinguishable, by shape, from a dead integration,
+# and the config-entry row keys on shape alone. A domain allowlist would be
+# the wrong fix twice over: it names integrations in a row whose contract is
+# to name none, and it grows forever. So the operator says which devices are
+# optional, in the HA UI, with a label -- exactly how the perimeter and the
+# security cameras are discovered -- and the row publishes what it declined
+# under `suppressed`, always present, never silently. Matched against the
+# label id first and the name second, like PERIMETER_LABEL. Bindable.
+INTEGRITY_OPTIONAL_LABEL = "integrity_optional"   # bind: config_entry_health.label
+
 # ------------------------------------------------------------------ BINDINGS
 #
 # WHICH ENTITIES THIS HOUSEHOLD READS IS CONFIGURATION, NOT SOURCE (#16).
@@ -353,6 +365,7 @@ BINDABLE_TEXT = (
     ("notify_health", "service_domain", "Notify service domain"),
     ("notify_health", "service", "Notify service name"),
     (BIND_PERIMETER, "label", "Perimeter label"),
+    ("config_entry_health", "label", "Integrity-optional device label"),
 )
 
 
@@ -876,6 +889,12 @@ SOURCES = (
         # ratio is computed generically off the entity registry, and
         # every entry already in setup_retry is read directly off
         # config_entries. Neither path names a domain.
+        #
+        # THE ONE EXCLUSION IS THE OPERATOR'S, NOT THIS FILE'S (#26): an
+        # entity carrying INTEGRITY_OPTIONAL_LABEL, or on a device that
+        # does, is left out of the ratio, and an entry with nothing else
+        # left is skipped and NAMED under `suppressed` -- a powered-off TV
+        # is not a dead integration, and a label says which is which.
         "key": "config_entry_health",
         "name": "Config Entry Health",
         "entity_id": None,

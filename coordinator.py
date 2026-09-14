@@ -7,7 +7,11 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er, label_registry as lr
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_registry as er,
+    label_registry as lr,
+)
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -27,6 +31,7 @@ from .const import (
     FALL_DWELL,
     INTEGRITY_DEGRADED,
     INTEGRITY_OK,
+    INTEGRITY_OPTIONAL_LABEL,
     normalize_macros,
     PERIMETER_DWELL,
     PERIMETER_LABEL,
@@ -691,21 +696,60 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._warn_once(spec["key"], "")
         return base
 
-    def _entry_unavailable_ratio(self, entry_id):
-        """(unavailable, total) owned entities for one config entry.
+    def _optional_label_id(self):
+        """The label id that marks a device or entity integrity-optional
+        (#26), or None when no such label exists.
+
+        ABSENCE IS NORMAL AND LOGS NOTHING. The default name exists only
+        where an operator created it; an installation with no optional
+        devices never makes the label and is not misconfigured. That is
+        the opposite of the perimeter label, which MUST resolve — a
+        perimeter with no label is a house with no doors, an optional
+        set with no label is an empty set.
+        """
+        wanted = self._bound("config_entry_health", "label", INTEGRITY_OPTIONAL_LABEL)
+        if wanted is None:
+            return None
+        lreg = lr.async_get(self.hass)
+        label = lreg.async_get_label(wanted)
+        if label is None:
+            label = lreg.async_get_label_by_name(wanted)
+        return None if label is None else label.label_id
+
+    def _entity_is_optional(self, entry, label_id) -> bool:
+        """Carries the label itself, or sits on a device that does."""
+        if label_id in (getattr(entry, "labels", None) or ()):
+            return True
+        device_id = getattr(entry, "device_id", None)
+        if not device_id:
+            return False
+        device = dr.async_get(self.hass).async_get(device_id)
+        return device is not None and label_id in (device.labels or ())
+
+    def _entry_unavailable_ratio(self, entry_id, label_id=None):
+        """(unavailable, total, optional) owned entities for one config entry.
 
         total==0 is vacuously healthy, never a finding — an integration
         that creates no entities is not this row's business.
+
+        `optional` counts the entities the operator labelled out (#26);
+        they are in neither `unavailable` nor `total`. An entry whose
+        every entity is optional therefore reads total==0 here, and the
+        caller tells that apart from "creates no entities" by optional>0.
         """
         ereg = er.async_get(self.hass)
         total = 0
         unavailable = 0
+        optional = 0
         for e in er.async_entries_for_config_entry(ereg, entry_id):
+            if label_id is not None and self._entity_is_optional(e, label_id):
+                optional += 1
+                continue
             st = self.hass.states.get(e.entity_id)
             total += 1
             if st is None or st.state == "unavailable":
                 unavailable += 1
-        return unavailable, total
+        return unavailable, total, optional
 
     def _read_config_entries(self, spec, base):
         """Two shapes, both generic across every domain:
@@ -717,7 +761,13 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                            excluded — see _entry_unavailable_ratio.
 
         THE SIGNAL KEYS ON THE SHAPE, NEVER ONE INTEGRATION: no domain is
-        named anywhere in this function. CONFIG_ENTRY_DWELL holds a fresh
+        named anywhere in this function. The one exclusion is the
+        operator's label (#26, _optional_label_id): an entry with nothing
+        but optional entities is skipped under BOTH shapes — a powered-off
+        device is allowed to be in setup_retry as much as it is allowed to
+        be unavailable — and named under `suppressed`, so the declined
+        signal is readable on the entity rather than vanishing.
+        CONFIG_ENTRY_DWELL holds a fresh
         `bad` reading for 300s before it counts, because this row —
         unlike every other INTEGRITY row — reads raw framework state with
         no upstream dwell of its own, and a core restart's ~60-90s window
@@ -736,19 +786,43 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["detail"] = "config_entries registry unreadable"
             return base
 
+        # The label lookup is inside the RULE 1 guard like every other
+        # registry read here: a label-registry API that moves under a core
+        # upgrade must degrade to "nothing optional", never to no reading.
+        try:
+            label_id = self._optional_label_id()
+        except Exception as exc:  # noqa: BLE001 — RULE 1
+            self._warn_once(
+                "cfgentry_label",
+                "registry_error",
+                "integrity-optional label lookup failed: " + str(exc),
+            )
+            label_id = None
+
         now = dt_util.utcnow()
         sustained = []
+        suppressed = []
         watched = 0
         for entry in entries:
             try:
                 if entry.disabled_by is not None:
+                    continue
+
+                unavailable, total, optional = self._entry_unavailable_ratio(
+                    entry.entry_id, label_id
+                )
+                if optional > 0 and total == 0:
+                    # Everything this entry owns is optional: whatever shape
+                    # it is in is the operator's stated expectation. Marked
+                    # `ok` so a label removed later starts the dwell fresh.
+                    self._mark("cfgentry:" + entry.entry_id, "ok")
+                    suppressed.append(entry.title + " (" + entry.domain + ")")
                     continue
                 watched += 1
 
                 is_retry = entry.state == ConfigEntryState.SETUP_RETRY
                 reason = "setup_retry" if is_retry else None
                 if entry.state == ConfigEntryState.LOADED and not is_retry:
-                    unavailable, total = self._entry_unavailable_ratio(entry.entry_id)
                     if total > 0 and unavailable == total:
                         reason = "all " + str(total) + " entities unavailable"
 
@@ -770,6 +844,13 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 continue
 
         base["watched_count"] = watched
+        # The whole list, not just the first (#26). `integrity_detail` is a
+        # one-line headline for the roll-up; "+2 more" in it left the other
+        # two unreadable anywhere on the entity.
+        base["affected_entries"] = list(sustained)
+        # Always present, like the directive's: an empty list says "nothing
+        # declined", a missing key would say nothing at all.
+        base["suppressed"] = suppressed
         if sustained:
             more = ""
             if len(sustained) > 1:

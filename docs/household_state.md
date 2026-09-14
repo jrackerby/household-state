@@ -124,6 +124,13 @@ entity means.
       reading before it counts — the one INTEGRITY row with no upstream
       dwell of its own, so without this a normal ~60-90s restart window
       would page Joel before HA finished starting.
+      The one exclusion is the operator's (#26): an entity carrying the
+      `integrity_optional` label (bindable, `config_entry_health.label`),
+      or on a device that does, is left out of the ratio, and an entry
+      with nothing else left is skipped under both shapes and named in
+      `suppressed` — always present on the row's sensor and on
+      `sensor.household_state_integrity`. `affected_entries` carries the
+      full finding list; `integrity_detail` is only its headline.
     - `notify_health` — `services.has_service("notify",
       "mobile_app_joels_iphone")`, the notify target
       `packages/household_state_integrity_notify.yaml` hardcodes. Catches

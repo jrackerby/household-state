@@ -210,6 +210,22 @@ def test_a_degraded_row_moves_integrity():
     assert out["integrity_affected"] == 2
 
 
+def test_the_axis_gathers_what_every_readable_row_suppressed():
+    """#26: a declined signal is stated on the axis too, always as a list.
+    An unreadable row's declined set is not gathered — a verdict computed
+    from a failed read is not a verdict, and neither is its exclusion."""
+    ok_row = integrity("cfg", verdict=INTEGRITY_OK)
+    ok_row["suppressed"] = ["Main Bed LGTV (webostv)", "Family Room LGTV (webostv)"]
+    dead_row = integrity("net", verdict=INTEGRITY_OK)
+    dead_row["disposition"] = DISP_UNKNOWN
+    dead_row["suppressed"] = ["never gathered"]
+    out = resolve([ok_row, dead_row])
+    assert out["integrity_suppressed"] == [
+        "Main Bed LGTV (webostv)", "Family Room LGTV (webostv)"
+    ]
+    assert resolve([stage("alarm", 0)])["integrity_suppressed"] == []
+
+
 def test_unknown_outranks_degraded():
     """On this axis `unknown` is first-class and OUTRANKS `degraded`. A verdict
     computed from a failed read is not a verdict."""
