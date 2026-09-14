@@ -139,9 +139,6 @@ class IntegritySensor(_Base):
             # rename; sensor.household_integrity is a distinct, already-
             # retired entity name and this comment is historical.)
             "sources_detail": d.get("integrity_sources_detail"),
-            # Always present (#26), like the directive's: what the integrity
-            # rows declined on the operator's say-so, by name.
-            "suppressed": d.get("integrity_suppressed") or [],
         }
 
 
@@ -229,11 +226,12 @@ class SourceSensor(_Base):
             # note); with just `entity_id` exposed they looked like one
             # duplicated row, which is exactly how the indistinguishable-entity defect was raised.
             "source_attr": r.get("integrity_attr"),
-            # The config-entry row's full findings and its declined set
-            # (#26). `detail` above is the one-line headline; a card that
-            # wants the other "+N more" reads these. `suppressed` is
-            # always a list so "nothing declined" reads as [] and never
-            # as absent.
+            # The config-entry row's full findings (#26) and its scope
+            # (#28). `detail` above is the one-line headline; a card that
+            # wants the other "+N more" reads `affected_entries`. The two
+            # counts say what the operator's label put in and left out —
+            # opt-in scope is only honest if its size is readable.
             "affected_entries": r.get("affected_entries"),
-            "suppressed": r.get("suppressed") or [],
+            "watched_count": r.get("watched_count"),
+            "unwatched_count": r.get("unwatched_count"),
         }

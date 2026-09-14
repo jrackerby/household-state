@@ -336,16 +336,6 @@ def resolve(readings):
         integ_sources_detail_rows.append(r["name"] + "~" + str(row_state) + "~" + str(row_detail))
     integ_sources_detail = "\n".join(integ_sources_detail_rows)
 
-    # WHAT THE ROWS DECLINED (#26), gathered across every readable integrity
-    # row so the axis states it too. A declined signal is stated on the
-    # entity, never silent — the same rule the directive's `suppressed`
-    # carries, and for the same reason: "nothing wrong" and "one thing
-    # wrong that the operator said to ignore" have to be readable apart.
-    integ_suppressed = []
-    for r in integ_rows:
-        if r["disposition"] == DISP_OK:
-            integ_suppressed.extend(r.get("suppressed") or [])
-
     # --- DIRECTIVE ---------------------------------------------------
     # 0.3.0: a real source, so `none` is now a finding rather than a
     # synthesised all-clear. It is only ever returned when the CAP field
@@ -370,7 +360,6 @@ def resolve(readings):
         "integrity_affected": integ_affected,
         "integrity_sources": len(integ_rows),
         "integrity_sources_detail": integ_sources_detail,
-        "integrity_suppressed": integ_suppressed,
         "directive": directive,
         "directive_reason": directive_reason,
         "directive_driver": directive_driver,

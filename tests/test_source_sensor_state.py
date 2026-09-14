@@ -126,22 +126,23 @@ def test_detail_falls_back_to_integrity_detail():
     )
 
 
-def test_the_full_finding_list_and_the_declined_set_are_attributes():
-    """#26: `detail` is the headline; "+N more" in it is readable in full
-    here, and what the row declined is a list that is never absent."""
+def test_the_full_finding_list_and_the_scope_counts_are_attributes():
+    """#26/#28: `detail` is the headline; "+N more" in it is readable in
+    full here, and the size of the operator's opt-in scope is stated."""
     s = _sensor(
         {
             "disposition": DISP_OK,
             "integrity": INTEGRITY_DEGRADED,
             "integrity_detail": "A (a): setup_retry +1 more",
             "affected_entries": ["A (a): setup_retry", "B (b): setup_retry"],
-            "suppressed": ["Main Bed LGTV (webostv)"],
+            "watched_count": 2,
+            "unwatched_count": 150,
         }
     )
     a = s.extra_state_attributes
     assert a["affected_entries"] == ["A (a): setup_retry", "B (b): setup_retry"]
-    assert a["suppressed"] == ["Main Bed LGTV (webostv)"]
-    assert _sensor({"disposition": DISP_OK}).extra_state_attributes["suppressed"] == []
+    assert a["watched_count"] == 2
+    assert a["unwatched_count"] == 150
 
 
 def test_an_explicit_detail_is_not_overwritten_by_the_fallback():
