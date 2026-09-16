@@ -99,3 +99,57 @@ required action. CAP severity does not determine what the household should do,
 which is why STAGE keeps its own local ramp instead of reading CAP's. Non-CAP
 sources (CDC, CISA, NTAS) carry no CAP severity at all, which bounds the ramp's
 scope the same way.
+
+## The rendering matrix (#30)
+
+The household banner's cell — which words, which tone, what is driving it —
+is resolved ONCE, in `banner.py`, and published as attributes of
+`sensor.household_state_directive`. A surface renders the cell it is handed
+and proves the display only; a companion app or a voice surface reads the
+same attributes and gives the same answer. This moved here from
+ha-dashboard-kit's `directive.ts` / `hazard.ts` (jrackerby/estate#6 §4.2);
+parity with the kit's resolver at the commit it left is recorded in
+`tests/fixtures/banner_parity.json` and asserted by
+`tests/test_banner_parity.py`.
+
+- **The cell is copy; the directive is the contract.** `banner.py` decides how
+  a (STAGE, DIRECTIVE) pair is worded and coloured and can promote or demote
+  nothing. It runs after `resolve()` and the fall dwell, off the PUBLISHED
+  stage word, so the cell and the stage entity can never disagree.
+- **The cells:** `alert` (elevated, no directive), `elev_secure`,
+  `elev_shelter`, `boil_water` (either stage), `crit_none` (critical, no
+  directive), `crit_secure`, `crit_shelter`, `evacuate` and `unavailable`.
+  `normal` with no directive is no cell at all (`cell: null`, `gate: none`).
+  EVACUATE is checked first and is reachable from any stage; an axis that
+  cannot be read is `unavailable`, never the empty row (unknown is not Normal
+  and never green).
+- **The gate verdict** (`gate`): `evacuate` mounts the exclusive inverted
+  face and nothing else; `banner` mounts the persistent row; `none` mounts
+  nothing.
+- **Tone** is the kit's status ramp — `watch` at elevated, `crit` at critical,
+  `stale` unreadable, `neutral` when QUIET tints. **QUIET tints, never
+  suppresses, and never at critical.** `stage_tone` is the stage's own colour
+  and QUIET does not move it.
+- **The two generic cells are worded from the named hazard where one is
+  known**, ahead of the operator's helper; the instruction cells are the
+  operator's, always — hazard wording never displaces a location instruction.
+  Only the shelter cells name the closet, and the suite asserts it across every
+  default and every guidance line.
+- **Names which, never that, and nothing machine-shaped reaches a line.** The
+  alarm, perimeter and outside-camera rows carry their entity ids structured
+  (`ids`) beside the raw detail string; the matrix words them off the state
+  machine's `friendly_name` (the id's own words as a fallback, never a slug on
+  glass). The raw identity stays on the source row and the stage's `detail`
+  for the next diagnosis.
+- **Two installation facts are bindings, not code:** `banner.text_prefix`
+  (an operator's own wording per cell, read from
+  `input_text.<prefix>_<cell>_imperative` / `_action`; a helper reading
+  `unknown` or empty is not set) and `banner.jurisdiction` (the place the
+  weather fallback line names; unbound, the line names no place rather than a
+  wrong one).
+- **Every attribute is always present** so a consumer can tell "no cell" from
+  "no matrix": `cell`, `gate`, `imperative`, `action`, `tone`, `stage_word`,
+  `stage_on`, `stage_tone`, `quiet`, `evacuate`, `status` (the status line's
+  parts — reason, source, duration — deduplicated against the stage word and
+  each other), `hazard_driver`, `hazard_source`, `hazard_name`,
+  `hazard_window`.

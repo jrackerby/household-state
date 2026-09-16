@@ -38,6 +38,15 @@ Each axis carries `driver` (which source drove it), `severity`, `since` and the
 directive's `reason` and `suppressed` list as attributes, so a surface can say
 *which* rather than *that*.
 
+The directive entity also carries **the resolved banner cell**: `cell`,
+`gate` (`none` / `banner` / `evacuate` — what a surface mounts), `imperative`
+and `action` (the words), `tone` and `stage_tone`, `status` (the status
+line's parts) and `hazard_driver` / `hazard_source` / `hazard_name` /
+`hazard_window` (what is driving the stage, named). The rendering matrix is
+resolved once, in `banner.py`, so a wall, a phone and a voice surface all
+give the same answer; the rules are in
+[docs/DESIGN_CONTRACT.md](docs/DESIGN_CONTRACT.md#the-rendering-matrix-30).
+
 ## The rules that make the answers trustworthy
 
 The invariants — unknown is never normal, integrity never moves stage, fall
@@ -107,6 +116,8 @@ severity is read. Which entity supplies it is yours to say.
 | `quiet.entity_id` | sleep-mode helper (QUIET) | `input_boolean` |
 | `perimeter.label` | label whose members are the perimeter | text |
 | `config_entry_health.label` | label that puts a device or entity **in scope** for the config-entry integrity check (opt-in — unlabelled is not watched); defaults to `integrity_watched`; a label that does not resolve or that nothing carries reads `absent` | text |
+| `banner.text_prefix` | your own wording per banner cell, read from `input_text.<prefix>_<cell>_imperative` / `_action` (for example `directive` → `input_text.directive_crit_shelter_imperative`); a helper reading `unknown` or empty is not set and the built-in default stands; unbound, only the defaults are used | text |
+| `banner.jurisdiction` | the place the weather wording names for an event the matrix has no line for ("*Rip Current Statement* is in effect for *Union County*."); unbound, the line names no place | text |
 
 **Leaving one blank is not the same as pointing it at nothing.** A blank
 binding falls through to the row's own default; an id that does not resolve

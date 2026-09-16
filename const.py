@@ -342,6 +342,10 @@ INTEGRITY_SCOPE_LABEL = "integrity_watched"   # bind: config_entry_health.label
 # selector domain the options flow offers.
 BIND_QUIET = "quiet"
 BIND_PERIMETER = "perimeter"
+# #30. The rendering matrix's two installation facts: where an operator's
+# own cell wording lives, and which jurisdiction the weather wording names.
+# Neither is a source row — the matrix reads the axes, not an entity.
+BIND_BANNER = "banner"
 
 BINDABLE = (
     ("local_nws", "entity_id", "sensor", "Local NWS threat sensor"),
@@ -370,6 +374,16 @@ BINDABLE_TEXT = (
     ("notify_health", "service", "Notify service name"),
     (BIND_PERIMETER, "label", "Perimeter label"),
     ("config_entry_health", "label", "Integrity scope label (devices watched)"),
+    # #30. With a prefix bound, a cell's wording is read from
+    # input_text.<prefix>_<cell>_imperative / _action and overrides the code
+    # default when set; unbound, the defaults stand. A helper whose state is
+    # unknown or empty is "not set", never a blank line.
+    (BIND_BANNER, "text_prefix",
+     "Directive text helper prefix (input_text.<prefix>_<cell>_imperative)"),
+    # The place the weather wording names for an event the matrix has no
+    # line for ("<event> is in effect for <jurisdiction>."). Unbound, the
+    # line names no place rather than a wrong one.
+    (BIND_BANNER, "jurisdiction", "Jurisdiction the weather feed covers"),
 )
 
 

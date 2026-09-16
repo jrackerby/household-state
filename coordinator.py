@@ -16,8 +16,10 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
+from .banner import resolve_banner
 from .const import (
     AXIS_DIRECTIVE,
+    BIND_BANNER,
     BIND_PERIMETER,
     BIND_QUIET,
     AXIS_INTEGRITY,
@@ -319,6 +321,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                 ids = sorted(str(x) for x in open_sensors)
             if ids:
                 base["detail"] += ", open: " + ", ".join(ids)
+            # #30. The same ids, structured, for the rendering matrix: the
+            # detail string is the diagnostic record and stays as it is;
+            # the matrix should not have to parse its own coordinator's
+            # log line to learn which door.
+            base["ids"] = ids
             base["disposition"] = DISP_OK
             return base
 
@@ -348,6 +355,7 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
                     ids = _id_list(st.attributes.get(seen_attr))
                     if ids:
                         base["detail"] += ", seen: " + ", ".join(ids)
+                    base["ids"] = ids
             elif st.state == "off":
                 base["severity"] = 0
                 base["detail"] = "no " + spec["name"].lower()
@@ -669,6 +677,9 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             base["detail"] = (
                 ", ".join(sustained) + " open over " + str(PERIMETER_DWELL) + "s"
             )
+            # #30. Structured for the rendering matrix, beside the string.
+            base["ids"] = list(sustained)
+            base["open_seconds"] = PERIMETER_DWELL
             self._warn_once(spec["key"], "")
             return base
 
@@ -991,6 +1002,45 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         self._held_since = now
         return severity, False, None
 
+    def _helper_text(self, cell: str, suffix: str):
+        """An operator's own wording for a cell, off an input_text helper
+        under the bound prefix, or None when no prefix is bound or the
+        helper does not exist. Read-only, like every other read here."""
+        prefix = self._bound(BIND_BANNER, "text_prefix")
+        if prefix is None:
+            return None
+        st = self.hass.states.get("input_text." + str(prefix) + "_" + cell + "_" + suffix)
+        return None if st is None else st.state
+
+    def _friendly_name(self, entity_id: str):
+        """The household's own word for an entity, or None if it cannot be
+        read — the matrix then names it off the id, which is worse and
+        still better than silence."""
+        st = self.hass.states.get(entity_id)
+        if st is None:
+            return None
+        name = st.attributes.get("friendly_name")
+        return name if isinstance(name, str) else None
+
+    def _resolve_banner(self, out: dict, readings: list) -> dict:
+        driver = None
+        if out.get("driver") is not None:
+            # STAGE names its driver by the PUBLISHED slug (#19); the reading
+            # is found by that same identity, never by re-deriving the key.
+            driver = next(
+                (r for r in readings if r.get("slug") == out["driver"]), None
+            )
+        return resolve_banner(
+            stage=out.get("stage"),
+            directive=out.get("directive"),
+            quiet=out.get("quiet"),
+            driver=driver,
+            stage_detail=out.get("detail"),
+            helper_text=self._helper_text,
+            names_of=self._friendly_name,
+            jurisdiction=self._bound(BIND_BANNER, "jurisdiction"),
+        )
+
     async def _async_update_data(self) -> dict:
         if not self._ages_loaded:
             await self.async_load_ages()
@@ -1026,6 +1076,13 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         out["integrity_since"] = self._mark("integrity", out["integrity"])
         out["directive_since"] = self._mark("directive", out["directive"])
         await self._save_ages()
+
+        # #30. The rendering matrix, resolved from the PUBLISHED axes — after
+        # the fall dwell, so the cell and the stage word a surface reads off
+        # the two entities can never disagree — and from the driver's own
+        # reading. Attached after resolve() like the macros: it reads the
+        # axes and moves none of them.
+        out["banner"] = self._resolve_banner(out, readings)
 
         out["readings"] = {r["key"]: r for r in readings}
         out["axis_stage_keys"] = [
