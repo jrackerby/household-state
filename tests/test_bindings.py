@@ -16,6 +16,7 @@ import pytest
 from household_state.const import (
     BINDABLE,
     BINDABLE_TEXT,
+    BIND_BANNER,
     BIND_PERIMETER,
     BIND_QUIET,
     DISP_ABSENT,
@@ -158,7 +159,7 @@ def test_an_unregistered_bound_service_names_it_in_the_detail():
 def test_every_bindable_names_a_real_source_row_or_a_pseudo_key():
     """A binding offered in the options flow that no reader consults is a
     setting that silently does nothing."""
-    keys = {s["key"] for s in SOURCES} | {BIND_QUIET, BIND_PERIMETER}
+    keys = {s["key"] for s in SOURCES} | {BIND_QUIET, BIND_PERIMETER, BIND_BANNER}
     for source_key, field, _domain, _label in BINDABLE:
         assert source_key in keys, f"{source_key} is not a source"
     for source_key, field, _label in BINDABLE_TEXT:

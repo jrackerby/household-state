@@ -13,6 +13,7 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import EntityCategory
 
+from .banner import BANNER_ATTRIBUTES
 from .const import DISP_OK, INTEGRITY_OK, SOURCES
 from .coordinator import HouseholdStateConfigEntry
 from .entity import HouseholdStateEntity
@@ -97,13 +98,23 @@ class DirectiveSensor(_Base):
         # offer, and the difference between "nothing applied" and "one
         # applied and we declined it" has to be readable here or the
         # policy is invisible at exactly the moment it matters.
-        return {
+        attrs = {
             "reason": d.get("directive_reason"),
             "driver": d.get("directive_driver"),
             "suppressed": d.get("directive_suppressed") or [],
             "source_count": d.get("directive_sources"),
             "since": d.get("directive_since"),
         }
+        # #30. THE RESOLVED RENDERING-MATRIX CELL. Every key is always
+        # present, so a surface reading `cell` gets None at Normal rather
+        # than a missing attribute it cannot tell from an older component.
+        # `gate` is the verdict a surface acts on (none / banner /
+        # evacuate); the rest is the cell's text, tone and driver, resolved
+        # in banner.py so every surface gets the same answer.
+        banner = d.get("banner") or {}
+        for key in BANNER_ATTRIBUTES:
+            attrs[key] = banner.get(key)
+        return attrs
 
 
 class IntegritySensor(_Base):

@@ -30,8 +30,8 @@ VERSION_LITERAL = re.compile(r"""["'](\d+\.\d+(?:\.\d+)?)["']""")
 # Everything else is guarded, const.py included: it used to carry a changelog
 # in its module docstring and was exempted for it, and the exemption outlived
 # the changelog. The history lives in `git log`, where it cannot go stale.
-SHIPPED_PY = ("__init__.py", "binary_sensor.py", "config_flow.py", "const.py",
-              "coordinator.py", "entity.py", "resolver.py", "sensor.py")
+SHIPPED_PY = ("__init__.py", "banner.py", "binary_sensor.py", "config_flow.py",
+              "const.py", "coordinator.py", "entity.py", "resolver.py", "sensor.py")
 
 
 def _manifest_version() -> str:

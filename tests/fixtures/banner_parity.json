@@ -1,0 +1,2538 @@
+{
+  "kit_commit": "c6fea2a2e4d91be876405d855bc4f73336500245",
+  "generator": "tools/banner_parity_fixture.ts",
+  "cases": [
+    {
+      "title": "preview: ELEVATED · Heat Advisory",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "band": "Elevated",
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory"
+          }
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 2 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 2 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "preview: CRITICAL · Severe Thunderstorm Warning (directive suppressed)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 5,
+            "driver": "nws_union",
+            "detail": "Severe Thunderstorm Warning until 6:00PM EDT"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "suppressed_by_policy",
+            "suppressed": [
+              "Severe Thunderstorm Warning -> Shelter"
+            ]
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Severe Thunderstorm Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Stay inside and away from the windows",
+        "action": "Damaging wind and hail are in the area. Expect the power to blink.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Severe Thunderstorm Warning",
+        "hazard_window": "until 6:00PM EDT",
+        "status": [
+          "Severe Thunderstorm Warning",
+          "National Weather Service",
+          "until 6:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "preview: CRITICAL · Tornado Warning → SHELTER",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union",
+            "detail": "Tornado Warning until 3:15PM EDT"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "reason": "cap_response",
+            "driver": "Tornado Warning",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Tornado Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_shelter",
+        "imperative": "Go to the main closet",
+        "action": "Away from windows.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Tornado Warning",
+        "hazard_window": "until 3:15PM EDT",
+        "status": [
+          "Tornado Warning",
+          "National Weather Service",
+          "until 3:15PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "preview: ELEVATED · Perimeter open, sustained",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "perimeter_open",
+            "detail": "binary_sensor.front_door_sensor_door_sensor, cover.garage_door open over 300s"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_perimeter_open_sustained": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "2 open of 8",
+            "detail": "binary_sensor.front_door_sensor_door_sensor, cover.garage_door open over 300s"
+          }
+        },
+        "binary_sensor.front_door_sensor_door_sensor": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "Front Door Sensor"
+          }
+        },
+        "cover.garage_door": {
+          "state": "open",
+          "attributes": {
+            "friendly_name": "Garage Door"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Close the Front Door and Garage Door",
+        "action": "Check the perimeter if nobody is out there.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Perimeter",
+        "hazard_name": "Perimeter open",
+        "hazard_window": "Open more than 5 minutes",
+        "status": [
+          "Perimeter open",
+          "Open more than 5 minutes"
+        ]
+      }
+    },
+    {
+      "title": "preview: ELEVATED · Perimeter open — four doors, bounded",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "perimeter_open"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_perimeter_open_sustained": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "4 open of 8",
+            "detail": "binary_sensor.front_door_sensor_door_sensor, cover.garage_door, binary_sensor.rear_gate_sensor_intrusion, binary_sensor.lan_room_door_sensor_contact open over 300s"
+          }
+        },
+        "binary_sensor.front_door_sensor_door_sensor": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "Front Door Sensor"
+          }
+        },
+        "cover.garage_door": {
+          "state": "open",
+          "attributes": {
+            "friendly_name": "Garage Door"
+          }
+        },
+        "binary_sensor.rear_gate_sensor_intrusion": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "Rear Gate Sensor Intrusion"
+          }
+        },
+        "binary_sensor.lan_room_door_sensor_contact": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "LAN Room Door Sensor Contact"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Close the Front Door, Garage Door, Rear Gate and 1 more",
+        "action": "Check the perimeter if nobody is out there.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Perimeter",
+        "hazard_name": "Perimeter open",
+        "hazard_window": "Open more than 5 minutes",
+        "status": [
+          "Perimeter open",
+          "Open more than 5 minutes"
+        ]
+      }
+    },
+    {
+      "title": "preview: CRITICAL · Armed with a door open",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 6,
+            "driver": "alarm"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_alarm": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "armed_away",
+            "detail": "alarm armed_away, open: binary_sensor.north_gate_sensor_intrusion"
+          }
+        },
+        "binary_sensor.north_gate_sensor_intrusion": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "North Gate Contact"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Close the North Gate — the house is armed",
+        "action": "Disarm first if someone needs to go through.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "Alarm",
+        "hazard_name": "Armed with a door open",
+        "hazard_window": null,
+        "status": [
+          "Armed with a door open",
+          "Alarm"
+        ]
+      }
+    },
+    {
+      "title": "preview: ELEVATED · Wind Advisory, with QUIET on",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "nws_union",
+            "detail": "Wind Advisory issued September 3 at 6:02AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Wind Advisory"
+          }
+        },
+        "input_text.directive_quiet_imperative": {
+          "state": "Sleep Mode",
+          "attributes": {}
+        },
+        "input_text.directive_quiet_action": {
+          "state": "Keep it down upstairs",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Put away anything loose outside",
+        "action": "Bins, umbrellas, trampoline. Expect the power to blink.",
+        "tone": "neutral",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Wind Advisory",
+        "hazard_window": "until September 3 at 8:00PM EDT",
+        "status": [
+          "Wind Advisory",
+          "National Weather Service",
+          "until September 3 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "preview: ELEVATED · NTAS (the stutter case)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 3,
+            "driver": "ntas"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_ntas_advisory": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Elevated"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay aware in public places",
+        "action": "National Terrorism Advisory: Elevated.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Terrorism Advisory",
+        "hazard_name": "Elevated",
+        "hazard_window": null,
+        "status": [
+          "National Terrorism Advisory"
+        ]
+      }
+    },
+    {
+      "title": "preview: UNAVAILABLE",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "unknown",
+          "attributes": {
+            "severity": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "unknown",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "unavailable",
+        "imperative": "",
+        "action": "The household posture axis is not reporting.",
+        "tone": "stale",
+        "evacuate": false,
+        "stage_word": "UNAVAILABLE",
+        "stage_on": true,
+        "stage_tone": "stale",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "preview: ELEVATED · hazard unnamed (helper still owns the line)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 3,
+            "driver": "some_future_source"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Be on alert",
+        "action": "Something may be developing — stay reachable",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "preview: EVACUATE",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {
+            "reason": "cap_response",
+            "driver": "Evacuation Immediate",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Evacuation Immediate"
+          }
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Evacuation Immediate",
+        "hazard_window": null,
+        "status": [
+          "Evacuation Immediate",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "preview header: cell=none",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "normal",
+          "attributes": {
+            "severity": 0
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory"
+          }
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "preview header: cell=quiet",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 3 at 3:29AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "neutral",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 3 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 3 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: Elevated",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 9 at 3:29AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 10 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 10 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: SecureCells (elevated)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 3,
+            "driver": "nws_union",
+            "detail": "Law Enforcement Warning until 9:45PM"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "secure",
+          "attributes": {
+            "reason": "cap_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Law Enforcement Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "elev_secure",
+        "imperative": "Check the perimeter",
+        "action": "Doors and windows shut, everyone inside.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Law Enforcement Warning",
+        "hazard_window": "until 9:45PM",
+        "status": [
+          "Law Enforcement Warning",
+          "National Weather Service",
+          "until 9:45PM"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: SecureCells (critical)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 6,
+            "driver": "nws_union",
+            "detail": "Civil Danger Warning until 11:00PM"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "secure",
+          "attributes": {
+            "reason": "cap_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Civil Danger Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_secure",
+        "imperative": "Secure the house",
+        "action": "Lock up, everyone inside and accounted for.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Civil Danger Warning",
+        "hazard_window": "until 11:00PM",
+        "status": [
+          "Civil Danger Warning",
+          "National Weather Service",
+          "until 11:00PM"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: ShelterCells (elevated)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "nws_union",
+            "detail": "Tornado Watch until 8:00PM EDT"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "reason": "cap_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Tornado Watch"
+          }
+        }
+      },
+      "expected": {
+        "cell": "elev_shelter",
+        "imperative": "Get ready to shelter",
+        "action": "Know your way to the main closet.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Tornado Watch",
+        "hazard_window": "until 8:00PM EDT",
+        "status": [
+          "Tornado Watch",
+          "National Weather Service",
+          "until 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: ShelterCells (critical)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union",
+            "detail": "Tornado Warning until 3:15PM EDT"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "reason": "cap_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Tornado Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_shelter",
+        "imperative": "Go to the main closet",
+        "action": "Away from windows.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Tornado Warning",
+        "hazard_window": "until 3:15PM EDT",
+        "status": [
+          "Tornado Warning",
+          "National Weather Service",
+          "until 3:15PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: QuietTint",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "nws_union",
+            "detail": "Wind Advisory issued September 9 at 6:02AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Wind Advisory"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Put away anything loose outside",
+        "action": "Bins, umbrellas, trampoline. Expect the power to blink.",
+        "tone": "neutral",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Wind Advisory",
+        "hazard_window": "until September 10 at 8:00PM EDT",
+        "status": [
+          "Wind Advisory",
+          "National Weather Service",
+          "until September 10 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: Suppressed",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 5,
+            "driver": "nws_union",
+            "detail": "Severe Thunderstorm Warning until 6:00PM"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "suppressed_by_policy",
+            "suppressed": [
+              "Severe Thunderstorm Warning -> Shelter"
+            ]
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Severe Thunderstorm Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Stay inside and away from the windows",
+        "action": "Damaging wind and hail are in the area. Expect the power to blink.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Severe Thunderstorm Warning",
+        "hazard_window": "until 6:00PM",
+        "status": [
+          "Severe Thunderstorm Warning",
+          "National Weather Service",
+          "until 6:00PM"
+        ]
+      }
+    },
+    {
+      "title": "design-sync: Unavailable",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "unknown",
+          "attributes": {
+            "severity": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "unknown",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "unavailable",
+        "imperative": "",
+        "action": "The household posture axis is not reporting.",
+        "tone": "stale",
+        "evacuate": false,
+        "stage_word": "UNAVAILABLE",
+        "stage_on": true,
+        "stage_tone": "stale",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "design-sync: Evacuate / HazardUnnamed",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {
+            "reason": "operator_override",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: HEAT_ADVISORY",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "band": "Elevated",
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory",
+            "detail": "Heat Advisory issued..."
+          }
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 2 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 2 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "test: HEAT_ADVISORY quiet",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "band": "Elevated",
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory",
+            "detail": "Heat Advisory issued..."
+          }
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "neutral",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 2 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 2 at 8:00PM EDT"
+        ]
+      }
+    },
+    {
+      "title": "test: normal renders nothing",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "normal",
+          "attributes": {
+            "severity": 0,
+            "driver": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: normal + quiet renders nothing",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "normal",
+          "attributes": {
+            "severity": 0,
+            "driver": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": true,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: unheard-of stage word is unavailable",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "degraded",
+          "attributes": {
+            "severity": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "unavailable",
+        "imperative": "",
+        "action": "The household posture axis is not reporting.",
+        "tone": "stale",
+        "evacuate": false,
+        "stage_word": "UNAVAILABLE",
+        "stage_on": true,
+        "stage_tone": "stale",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: helper owns the line when the hazard cannot be named",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "ntas_gone"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Be on alert",
+        "action": "Something may be developing — stay reachable",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: crit_none worded from the hazard",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 5,
+            "driver": "nws_union",
+            "detail": "STW until 6PM"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "suppressed_by_policy",
+            "suppressed": [
+              "Severe Thunderstorm Warning -> Shelter"
+            ]
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Severe Thunderstorm Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Stay inside and away from the windows",
+        "action": "Damaging wind and hail are in the area. Expect the power to blink.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Severe Thunderstorm Warning",
+        "hazard_window": "until 6PM",
+        "status": [
+          "Severe Thunderstorm Warning",
+          "National Weather Service",
+          "until 6PM"
+        ]
+      }
+    },
+    {
+      "title": "test: shelter keeps the house wording",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "reason": "cap_response",
+            "driver": "Tornado Warning",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Tornado Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_shelter",
+        "imperative": "Go to the main closet",
+        "action": "Away from windows.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Tornado Warning",
+        "hazard_window": null,
+        "status": [
+          "Tornado Warning",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: shelter helper override",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "reason": "cap_response",
+            "driver": "Tornado Warning",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Tornado Warning"
+          }
+        },
+        "input_text.directive_crit_shelter_imperative": {
+          "state": "Everyone to the closet, now",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "crit_shelter",
+        "imperative": "Everyone to the closet, now",
+        "action": "Away from windows.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Tornado Warning",
+        "hazard_window": null,
+        "status": [
+          "Tornado Warning",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: alarm triggered (no open list)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "alarm",
+            "detail": "alarm triggered"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_alarm": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "triggered",
+            "detail": "alarm triggered"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "The alarm is sounding",
+        "action": "Do not open the door to anyone you did not let in.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "Alarm",
+        "hazard_name": "Alarm triggered",
+        "hazard_window": null,
+        "status": [
+          "Alarm triggered"
+        ]
+      }
+    },
+    {
+      "title": "test: perimeter names the doors",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "perimeter_open"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_perimeter_open_sustained": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "2 open of 8",
+            "detail": "binary_sensor.front_door_sensor_door_sensor, cover.garage_door open over 300s"
+          }
+        },
+        "binary_sensor.front_door_sensor_door_sensor": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "Front Door Sensor"
+          }
+        },
+        "cover.garage_door": {
+          "state": "open",
+          "attributes": {
+            "friendly_name": "Garage Door"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Close the Front Door and Garage Door",
+        "action": "Check the perimeter if nobody is out there.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Perimeter",
+        "hazard_name": "Perimeter open",
+        "hazard_window": "Open more than 5 minutes",
+        "status": [
+          "Perimeter open",
+          "Open more than 5 minutes"
+        ]
+      }
+    },
+    {
+      "title": "test: perimeter detail does not parse",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "perimeter_open"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_perimeter_open_sustained": {
+          "state": "ok",
+          "attributes": {
+            "detail": "something else entirely"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Something has been left open",
+        "action": "A door or gate is open — check the perimeter.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Perimeter",
+        "hazard_name": "Perimeter open",
+        "hazard_window": null,
+        "status": [
+          "Perimeter open"
+        ]
+      }
+    },
+    {
+      "title": "test: armed with the front door open",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 6,
+            "driver": "alarm"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_alarm": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "armed_away",
+            "detail": "alarm armed_away, open: binary_sensor.front_door_sensor_door_sensor"
+          }
+        },
+        "binary_sensor.front_door_sensor_door_sensor": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "Front Door Sensor"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Close the Front Door — the house is armed",
+        "action": "Disarm first if someone needs to go through.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "Alarm",
+        "hazard_name": "Armed with a door open",
+        "hazard_window": null,
+        "status": [
+          "Armed with a door open",
+          "Alarm"
+        ]
+      }
+    },
+    {
+      "title": "test: triggered, north gate tripped it",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "alarm"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_alarm": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "triggered",
+            "detail": "alarm triggered, open: binary_sensor.north_gate_sensor_intrusion"
+          }
+        },
+        "binary_sensor.north_gate_sensor_intrusion": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "North Gate Contact"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "The alarm is sounding",
+        "action": "North Gate tripped it. Do not open the door to anyone you did not let in.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "Alarm",
+        "hazard_name": "Alarm triggered",
+        "hazard_window": null,
+        "status": [
+          "Alarm triggered"
+        ]
+      }
+    },
+    {
+      "title": "test: armed, bare detail",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 6,
+            "driver": "alarm"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_alarm": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "armed_away",
+            "detail": "alarm armed_away"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Close up — the house is armed with something open",
+        "action": "Close it, or disarm before anyone goes through.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "Alarm",
+        "hazard_name": "Armed with a door open",
+        "hazard_window": null,
+        "status": [
+          "Armed with a door open",
+          "Alarm"
+        ]
+      }
+    },
+    {
+      "title": "test: space weather",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "space_weather"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_space_weather": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Storm (G1)"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Nothing to do indoors",
+        "action": "Storm (G1) — GPS and radio may be unreliable outdoors.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Space weather",
+        "hazard_name": "Storm (G1)",
+        "hazard_window": null,
+        "status": [
+          "Storm (G1)",
+          "Space weather"
+        ]
+      }
+    },
+    {
+      "title": "test: unmapped weather event",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 1,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Rip Current Statement"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Keep an eye on the weather",
+        "action": "Rip Current Statement is in effect for Union County.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Rip Current Statement",
+        "hazard_window": null,
+        "status": [
+          "Rip Current Statement",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: quiet never tints a critical",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 5,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Severe Thunderstorm Warning"
+          }
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Stay inside and away from the windows",
+        "action": "Damaging wind and hail are in the area. Expect the power to blink.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Severe Thunderstorm Warning",
+        "hazard_window": null,
+        "status": [
+          "Severe Thunderstorm Warning",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: evacuate keeps its fixed imperative",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {
+            "driver": "Evacuation Immediate",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Evacuation Immediate"
+          }
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Evacuation Immediate",
+        "hazard_window": null,
+        "status": [
+          "Evacuation Immediate",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: perimeter tagged by name, not tally",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "perimeter_open",
+            "detail": "binary_sensor.drop_zone_door_contact open over 300s"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_perimeter_open_sustained": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "1 open of 14",
+            "detail": "binary_sensor.drop_zone_door_contact open over 300s"
+          }
+        },
+        "binary_sensor.drop_zone_door_contact": {
+          "state": "on",
+          "attributes": {
+            "friendly_name": "Drop Zone Door Sensor"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Close the Drop Zone Door",
+        "action": "Check the perimeter if nobody is out there.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Perimeter",
+        "hazard_name": "Perimeter open",
+        "hazard_window": "Open more than 5 minutes",
+        "status": [
+          "Perimeter open",
+          "Open more than 5 minutes"
+        ]
+      }
+    },
+    {
+      "title": "test: headline that is only the name",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "nws_union",
+            "detail": "Heat Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": null,
+        "status": [
+          "Heat Advisory",
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: critical shelter with quiet on",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "crit_shelter",
+        "imperative": "Go to the main closet",
+        "action": "Away from windows.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": [
+          "National Weather Service"
+        ]
+      }
+    },
+    {
+      "title": "test: NTAS stutter",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "ntas"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_ntas_advisory": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Elevated"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay aware in public places",
+        "action": "National Terrorism Advisory: Elevated.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Terrorism Advisory",
+        "hazard_name": "Elevated",
+        "hazard_window": null,
+        "status": [
+          "National Terrorism Advisory"
+        ]
+      }
+    },
+    {
+      "title": "test: perimeter stutter (no friendly name)",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "driver": "perimeter_open"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_perimeter_open_sustained": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "1 open of 14",
+            "detail": "binary_sensor.drop_zone_door_contact open over 300s"
+          }
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Close the Drop Zone Door",
+        "action": "Check the perimeter if nobody is out there.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "Perimeter",
+        "hazard_name": "Perimeter open",
+        "hazard_window": "Open more than 5 minutes",
+        "status": [
+          "Perimeter open",
+          "Open more than 5 minutes"
+        ]
+      }
+    },
+    {
+      "title": "test: boil_water elevated",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "boil_water",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "boil_water",
+        "imperative": "Boil water before drinking",
+        "action": "Cooking and brushing teeth too. Bottled water is fine.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil_water critical",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "boil_water",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "boil_water",
+        "imperative": "Boil water before drinking",
+        "action": "Cooking and brushing teeth too. Bottled water is fine.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil vs shelter elevated",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "elev_shelter",
+        "imperative": "Get ready to shelter",
+        "action": "Know your way to the main closet.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil vs shelter critical",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "crit_shelter",
+        "imperative": "Go to the main closet",
+        "action": "Away from windows.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil vs evacuate elevated",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil vs evacuate normal",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "normal",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil none elevated",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Be on alert",
+        "action": "Something may be developing.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil none critical",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "crit_none",
+        "imperative": "Conditions are severe",
+        "action": "Stay inside and stay alert.",
+        "tone": "crit",
+        "evacuate": false,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    },
+    {
+      "title": "test: boil unknown directive",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "unknown",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "unavailable",
+        "imperative": "",
+        "action": "The household posture axis is not reporting.",
+        "tone": "stale",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": []
+      }
+    }
+  ]
+}
