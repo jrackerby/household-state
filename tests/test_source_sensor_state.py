@@ -210,3 +210,32 @@ def test_the_assertions_can_fail():
     assert _sensor(
         {"disposition": DISP_OK, "integrity": INTEGRITY_DEGRADED}
     ).native_value == INTEGRITY_DEGRADED
+
+
+def test_the_perimeter_row_publishes_which_members_it_cannot_read():
+    """The entity is the durable surface; the log line that named the blind
+    members fires once per membership by design, and a log is not a surface.
+    Measured 2026-09-21: STAGE sat at `unknown` for thirteen hours reading
+    "1 of 8 unreadable", and which of the eight was answerable only by
+    walking the label registry by hand."""
+    s = _sensor(
+        {
+            "disposition": DISP_UNKNOWN,
+            "detail": "cannot confirm closed: binary_sensor.lan_room unreadable (1 of 8)",
+            "watched_count": 8,
+            "open_count": 0,
+            "blind": ["binary_sensor.lan_room"],
+        }
+    )
+    a = s.extra_state_attributes
+    assert a["blind"] == ["binary_sensor.lan_room"]
+    assert a["open_count"] == 0
+    assert a["watched_count"] == 8
+
+
+def test_every_row_carries_the_keys_even_where_they_do_not_apply():
+    """A key that appears on one row and vanishes on another is one a
+    consumer cannot tell from a defect."""
+    a = _sensor({"disposition": DISP_OK}).extra_state_attributes
+    assert "blind" in a and a["blind"] is None
+    assert "open_count" in a and a["open_count"] is None
