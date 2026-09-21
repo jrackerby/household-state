@@ -1,5 +1,5 @@
 {
-  "kit_commit": "c6fea2a2e4d91be876405d855bc4f73336500245",
+  "kit_commit": "4edd93dbf086539759dc6814d3999f0aa6b19354",
   "generator": "tools/banner_parity_fixture.ts",
   "cases": [
     {
@@ -53,7 +53,8 @@
           "Heat Advisory",
           "National Weather Service",
           "until September 2 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -104,7 +105,8 @@
           "Severe Thunderstorm Warning",
           "National Weather Service",
           "until 6:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -154,7 +156,8 @@
           "Tornado Warning",
           "National Weather Service",
           "until 3:15PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -214,7 +217,8 @@
         "status": [
           "Perimeter open",
           "Open more than 5 minutes"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -285,7 +289,8 @@
         "status": [
           "Perimeter open",
           "Open more than 5 minutes"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -338,7 +343,8 @@
         "status": [
           "Armed with a door open",
           "Alarm"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -394,7 +400,8 @@
           "Wind Advisory",
           "National Weather Service",
           "until September 3 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -439,7 +446,8 @@
         "hazard_window": null,
         "status": [
           "National Terrorism Advisory"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -475,7 +483,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -520,7 +529,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -568,7 +578,8 @@
         "status": [
           "Evacuation Immediate",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -611,7 +622,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -660,7 +672,8 @@
           "Heat Advisory",
           "National Weather Service",
           "until September 3 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -709,7 +722,8 @@
           "Heat Advisory",
           "National Weather Service",
           "until September 10 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -758,7 +772,8 @@
           "Law Enforcement Warning",
           "National Weather Service",
           "until 9:45PM"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -807,7 +822,8 @@
           "Civil Danger Warning",
           "National Weather Service",
           "until 11:00PM"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -856,7 +872,8 @@
           "Tornado Watch",
           "National Weather Service",
           "until 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -905,7 +922,8 @@
           "Tornado Warning",
           "National Weather Service",
           "until 3:15PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -953,7 +971,8 @@
           "Wind Advisory",
           "National Weather Service",
           "until September 10 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1004,7 +1023,8 @@
           "Severe Thunderstorm Warning",
           "National Weather Service",
           "until 6:00PM"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1040,7 +1060,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -1077,7 +1098,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -1136,7 +1158,8 @@
           "Heat Advisory",
           "National Weather Service",
           "until September 2 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1195,7 +1218,8 @@
           "Heat Advisory",
           "National Weather Service",
           "until September 2 at 8:00PM EDT"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1230,7 +1254,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -1265,7 +1290,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -1299,7 +1325,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -1345,7 +1372,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -1396,7 +1424,8 @@
           "Severe Thunderstorm Warning",
           "National Weather Service",
           "until 6PM"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1444,7 +1473,8 @@
         "status": [
           "Tornado Warning",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1496,7 +1526,8 @@
         "status": [
           "Tornado Warning",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1543,7 +1574,8 @@
         "hazard_window": null,
         "status": [
           "Alarm triggered"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1602,7 +1634,8 @@
         "status": [
           "Perimeter open",
           "Open more than 5 minutes"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1647,7 +1680,8 @@
         "hazard_window": null,
         "status": [
           "Perimeter open"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1700,7 +1734,8 @@
         "status": [
           "Armed with a door open",
           "Alarm"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1752,7 +1787,8 @@
         "hazard_window": null,
         "status": [
           "Alarm triggered"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1799,7 +1835,8 @@
         "status": [
           "Armed with a door open",
           "Alarm"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1845,7 +1882,8 @@
         "status": [
           "Storm (G1)",
           "Space weather"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1891,7 +1929,8 @@
         "status": [
           "Rip Current Statement",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1937,7 +1976,8 @@
         "status": [
           "Severe Thunderstorm Warning",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -1984,7 +2024,8 @@
         "status": [
           "Evacuation Immediate",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -2038,7 +2079,8 @@
         "status": [
           "Perimeter open",
           "Open more than 5 minutes"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -2085,7 +2127,8 @@
         "status": [
           "Heat Advisory",
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -2124,7 +2167,8 @@
         "hazard_window": null,
         "status": [
           "National Weather Service"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -2169,7 +2213,8 @@
         "hazard_window": null,
         "status": [
           "National Terrorism Advisory"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -2216,7 +2261,8 @@
         "status": [
           "Perimeter open",
           "Open more than 5 minutes"
-        ]
+        ],
+        "party": false
       }
     },
     {
@@ -2251,7 +2297,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2286,7 +2333,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2321,7 +2369,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2356,7 +2405,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2391,7 +2441,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2426,7 +2477,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2461,7 +2513,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2496,7 +2549,8 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
       }
     },
     {
@@ -2531,7 +2585,484 @@
         "hazard_source": null,
         "hazard_name": null,
         "hazard_window": null,
-        "status": []
+        "status": [],
+        "party": false
+      }
+    },
+    {
+      "title": "party: elevated heat advisory, masked",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "band": "Elevated",
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory",
+            "detail": "Heat Advisory issued..."
+          }
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 2 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 2 at 8:00PM EDT"
+        ],
+        "party": true
+      }
+    },
+    {
+      "title": "party: critical tornado warning, masked",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "shelter",
+          "attributes": {
+            "reason": "cap_response",
+            "driver": "Tornado Warning",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Tornado Warning"
+          }
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Tornado Warning",
+        "hazard_window": null,
+        "status": [
+          "Tornado Warning",
+          "National Weather Service"
+        ],
+        "party": true
+      }
+    },
+    {
+      "title": "party: the same house with the party off",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "band": "Elevated",
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory",
+            "detail": "Heat Advisory issued..."
+          }
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_party": {
+          "state": "off",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "alert",
+        "imperative": "Stay out of the afternoon heat",
+        "action": "Drink water, and check on anyone working outside.",
+        "tone": "watch",
+        "evacuate": false,
+        "stage_word": "ELEVATED",
+        "stage_on": true,
+        "stage_tone": "watch",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 2 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 2 at 8:00PM EDT"
+        ],
+        "party": false
+      }
+    },
+    {
+      "title": "party: a suppressed warning is masked too",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 5,
+            "driver": "nws_union",
+            "detail": "Severe Thunderstorm Warning until 6:00PM EDT"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "suppressed_by_policy",
+            "suppressed": [
+              "Severe Thunderstorm Warning -> Shelter"
+            ]
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Severe Thunderstorm Warning"
+          }
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Severe Thunderstorm Warning",
+        "hazard_window": "until 6:00PM EDT",
+        "status": [
+          "Severe Thunderstorm Warning",
+          "National Weather Service",
+          "until 6:00PM EDT"
+        ],
+        "party": true
+      }
+    },
+    {
+      "title": "party: an evacuation is never masked",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "critical",
+          "attributes": {
+            "severity": 7,
+            "driver": "nws_union"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {
+            "reason": "cap_response",
+            "driver": "Evacuation Immediate",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Evacuation Immediate"
+          }
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "CRITICAL",
+        "stage_on": true,
+        "stage_tone": "crit",
+        "quiet": false,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Evacuation Immediate",
+        "hazard_window": null,
+        "status": [
+          "Evacuation Immediate",
+          "National Weather Service"
+        ],
+        "party": true
+      }
+    },
+    {
+      "title": "party: an evacuation from a stage that cannot be read",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "unknown",
+          "attributes": {
+            "severity": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "evacuate",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": "evacuate",
+        "imperative": "EVACUATE",
+        "action": "Leave the house now.",
+        "tone": "crit",
+        "evacuate": true,
+        "stage_word": "UNAVAILABLE",
+        "stage_on": true,
+        "stage_tone": "stale",
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": [],
+        "party": true
+      }
+    },
+    {
+      "title": "party: an unreadable stage is masked like any other",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "unknown",
+          "attributes": {
+            "severity": null
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "unknown",
+          "attributes": {
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": [],
+        "party": true
+      }
+    },
+    {
+      "title": "party: quiet and masked at once",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 2,
+            "band": "Elevated",
+            "driver": "nws_union",
+            "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "none",
+          "attributes": {
+            "reason": "no_directive_response",
+            "suppressed": []
+          }
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "on",
+          "attributes": {}
+        },
+        "sensor.household_state_nws_union": {
+          "state": "ok",
+          "attributes": {
+            "raw_state": "Heat Advisory",
+            "detail": "Heat Advisory issued..."
+          }
+        },
+        "input_text.directive_alert_imperative": {
+          "state": "Be on alert",
+          "attributes": {}
+        },
+        "input_text.directive_alert_action": {
+          "state": "Something may be developing — stay reachable",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": true,
+        "hazard_source": "National Weather Service",
+        "hazard_name": "Heat Advisory",
+        "hazard_window": "until September 2 at 8:00PM EDT",
+        "status": [
+          "Heat Advisory",
+          "National Weather Service",
+          "until September 2 at 8:00PM EDT"
+        ],
+        "party": true
+      }
+    },
+    {
+      "title": "party: boil water, masked",
+      "states": {
+        "sensor.household_state_stage": {
+          "state": "elevated",
+          "attributes": {
+            "severity": 4,
+            "driver": "Boil Water Advisory"
+          }
+        },
+        "sensor.household_state_directive": {
+          "state": "boil_water",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_quiet": {
+          "state": "off",
+          "attributes": {}
+        },
+        "binary_sensor.household_state_party": {
+          "state": "on",
+          "attributes": {}
+        }
+      },
+      "expected": {
+        "cell": null,
+        "imperative": "",
+        "action": "",
+        "tone": "good",
+        "evacuate": false,
+        "stage_word": "NORMAL",
+        "stage_on": false,
+        "stage_tone": null,
+        "quiet": false,
+        "hazard_source": null,
+        "hazard_name": null,
+        "hazard_window": null,
+        "status": [],
+        "party": true
       }
     }
   ]

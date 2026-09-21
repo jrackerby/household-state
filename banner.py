@@ -225,6 +225,7 @@ BANNER_ATTRIBUTES = (
     "cell", "gate", "imperative", "action", "tone",
     "stage_word", "stage_on", "stage_tone", "quiet", "evacuate",
     "status", "hazard_driver", "hazard_source", "hazard_name", "hazard_window",
+    "masked", "masked_by",
 )
 
 _EMPTY_HAZARD = {
@@ -551,9 +552,75 @@ def _cell_text(cell, hazard, helper_text):
     return read("imperative", default[0]), read("action", default[1])
 
 
+# ---------------------------------------------------------------------
+# The mask (#30, ported from ha-dashboard-kit's `party.ts`).
+#
+# A macro state may declare that while it is on the banner says NOTHING
+# (const.py, `masks`): no cell, no instruction, no status line, no named
+# hazard. PARTY is the instance it exists for — a wall in a room full of
+# guests does not announce the household's own security posture.
+#
+# AN EVACUATION IS NEVER MASKED. It is checked off the DIRECTIVE word, not
+# off the cell, so the exception holds at any stage and holds even when the
+# stage axis cannot be read.
+#
+# WHY THE MASK IS HERE AND NOT ON THE SURFACE. It was `party.ts` in the kit
+# and therefore true of the walls alone; the companion app and a voice
+# surface would each have needed their own copy of a rule that decides
+# whether a safety instruction is spoken. One resolver, one answer (#30).
+#
+# THE AXES DO NOT MOVE (RULE 7). STAGE, DIRECTIVE and INTEGRITY publish
+# exactly what they resolved — severity, driver, `suppressed` record and
+# all — and every automation reading them sees a masked household and an
+# unmasked one identically. This masks the CELL, which is copy.
+#
+# SILENT MEANS SILENT, AND THIS IS STRICTER THAN THE KIT WAS. `directive.ts`
+# masked by resolving the stage word to `normal` and left `hazard`/the
+# status line computed underneath, where nothing could reach them because
+# the banner returned null. An attribute has no such floor: whatever is
+# published here can be read by a surface that was written later. So the
+# masked cell states nothing at all — no stage word, no status parts, no
+# hazard — and `masked` / `masked_by` say why, so a diagnostic board can
+# tell a masked house from a quiet one without guessing.
+def _masked_cell(masked_by, quiet_on):
+    return {
+        "cell": None,
+        "gate": GATE_NONE,
+        "imperative": "",
+        "action": "",
+        "tone": TONE_GOOD,
+        # NOT "NORMAL". The kit substituted the word and never rendered it
+        # (`stage_on` false took the pill away first); a published NORMAL is
+        # a claim about a house whose stage may be CRITICAL underneath.
+        "stage_word": None,
+        "stage_on": False,
+        "stage_tone": None,
+        # QUIET still tints the shell — it is the sleeping house's own fact
+        # and the mask is about what the banner SAYS, not about the light in
+        # the room.
+        "quiet": quiet_on,
+        "evacuate": False,
+        "status": [],
+        "hazard_driver": None,
+        "hazard_source": None,
+        "hazard_name": None,
+        "hazard_window": None,
+        "masked": True,
+        "masked_by": masked_by,
+    }
+
+
 def resolve_banner(*, stage, directive, quiet, driver=None, stage_detail=None,
-                   helper_text=None, names_of=None, jurisdiction=None):
-    """The one function the coordinator calls. Returns the attribute dict."""
+                   helper_text=None, names_of=None, jurisdiction=None,
+                   masked_by=None):
+    """The one function the coordinator calls. Returns the attribute dict.
+
+    `masked_by` is the slug of a macro state that is ON and declares
+    `masks` — or None, which is every installation that has defined no such
+    macro. It silences the cell unless the directive is EVACUATE.
+    """
+    if masked_by is not None and directive != DIRECTIVE_EVACUATE:
+        return _masked_cell(masked_by, quiet is True)
     cell = resolve_cell(stage, directive)
     hazard = hazard_now(driver, stage_detail, names_of, jurisdiction)
 
@@ -601,4 +668,6 @@ def resolve_banner(*, stage, directive, quiet, driver=None, stage_detail=None,
         "hazard_source": hazard["label"],
         "hazard_name": hazard["name"],
         "hazard_window": hazard["window"],
+        "masked": False,
+        "masked_by": None,
     }

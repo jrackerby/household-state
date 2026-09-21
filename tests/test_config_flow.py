@@ -47,14 +47,15 @@ from household_state.const import (
 _ONE_MACRO = {
     OPT_MACROS: [
         {"slug": "guest", "name": "Guest", "entity_id": "input_boolean.guest",
-         "on_state": "on", "icon": None},
+         "on_state": "on", "icon": None, "masks": False},
     ]
 }
 
 _TWO_MACROS = {
     OPT_MACROS: _ONE_MACRO[OPT_MACROS] + [
         {"slug": "away", "name": "Away", "entity_id": "person.sam",
-         "on_state": "not_home", "icon": "mdi:home-export-outline"},
+         "on_state": "not_home", "icon": "mdi:home-export-outline",
+         "masks": False},
     ]
 }
 
@@ -284,6 +285,7 @@ def test_defining_a_macro_stores_it_with_a_slug_derived_from_the_name():
             "entity_id": "input_boolean.guest_mode",
             "on_state": "on",
             "icon": None,
+            "masks": False,
         }
     ]
 
@@ -715,3 +717,62 @@ def test_the_assertions_can_fail():
     assert asyncio.run(
         _flow(current_entries=(_Entry(),)).async_step_user(None)
     )["type"] == "abort"
+
+
+# ------------------------------------------- the mask a macro may declare (#30)
+
+def test_a_macro_can_declare_that_it_silences_the_banner():
+    import asyncio
+
+    result = asyncio.run(
+        _options_flow().async_step_macro_add(
+            {"name": "Party", "entity_id": "input_boolean.party", "masks": True}
+        )
+    )
+    assert result["data"][OPT_MACROS] == [
+        {
+            "slug": "party",
+            "name": "Party",
+            "entity_id": "input_boolean.party",
+            "on_state": "on",
+            "icon": None,
+            "masks": True,
+        }
+    ]
+
+
+def test_the_box_is_off_unless_it_is_ticked():
+    """The default every existing installation keeps: a form that omits the
+    field, or hands anything that is not the checkbox's own True, defines a
+    macro that silences nothing."""
+    import asyncio
+
+    for user_input in (
+        {"name": "Guest", "entity_id": "input_boolean.guest"},
+        {"name": "Guest", "entity_id": "input_boolean.guest", "masks": False},
+        {"name": "Guest", "entity_id": "input_boolean.guest", "masks": "yes"},
+    ):
+        result = asyncio.run(_options_flow().async_step_macro_add(dict(user_input)))
+        assert result["data"][OPT_MACROS][0]["masks"] is False, user_input
+
+
+def test_the_edit_form_offers_the_flag_as_it_stands_and_can_turn_it_off():
+    import asyncio
+
+    stored = {OPT_MACROS: [
+        {"slug": "party", "name": "Party", "entity_id": "input_boolean.party",
+         "on_state": "on", "icon": None, "masks": True},
+    ]}
+    flow = _options_flow(stored)
+    form = asyncio.run(flow.async_step_macro_edit({"slug": "party"}))
+    filled = form["data_schema"](
+        {"name": "Party", "entity_id": "input_boolean.party"}
+    )
+    assert filled["masks"] is True
+    result = asyncio.run(
+        flow.async_step_macro_detail(
+            {"name": "Party", "entity_id": "input_boolean.party", "on_state": "on",
+             "masks": False}
+        )
+    )
+    assert result["data"][OPT_MACROS][0]["masks"] is False

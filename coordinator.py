@@ -508,6 +508,10 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             "entity_id": eid,
             "on_state": macro["on_state"],
             "icon": macro["icon"],
+            # #30. Whether this modifier silences the banner while it is on.
+            # It travels with the reading so the banner resolves off one
+            # structure and the macro's own entity can state it.
+            "masks": macro["masks"],
             "state": None,
             "raw_state": None,
             "disposition": DISP_ABSENT,
@@ -1022,6 +1026,24 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
         name = st.attributes.get("friendly_name")
         return name if isinstance(name, str) else None
 
+    @staticmethod
+    def _masking_macro(macros: dict):
+        """The slug of a macro state that is ON and declares `masks`, or
+        None. First declared wins, so the answer does not depend on dict
+        iteration order.
+
+        `state is True`, NEVER truthiness: a macro whose source is missing,
+        unavailable or unknown reads None (`_read_macro`), and an unreadable
+        modifier must not silence the banner. A wall that stops stating a
+        shelter instruction because somebody deleted the party helper is the
+        dead-feed-reads-green defect pointed at the one surface that was
+        supposed to be immune to it.
+        """
+        for reading in macros.values():
+            if reading.get("masks") and reading.get("state") is True:
+                return reading["slug"]
+        return None
+
     def _resolve_banner(self, out: dict, readings: list) -> dict:
         driver = None
         if out.get("driver") is not None:
@@ -1039,6 +1061,11 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
             helper_text=self._helper_text,
             names_of=self._friendly_name,
             jurisdiction=self._bound(BIND_BANNER, "jurisdiction"),
+            # #30. The mask is read off the macros attached above — the
+            # coordinator's own reading of them, not the binary_sensor this
+            # component publishes from it, which would be one cycle stale
+            # and would make the banner depend on its own output.
+            masked_by=self._masking_macro(out.get("macros") or {}),
         )
 
     async def _async_update_data(self) -> dict:

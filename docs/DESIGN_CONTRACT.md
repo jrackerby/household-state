@@ -108,8 +108,10 @@ is resolved ONCE, in `banner.py`, and published as attributes of
 and proves the display only; a companion app or a voice surface reads the
 same attributes and gives the same answer. This moved here from
 ha-dashboard-kit's `directive.ts` / `hazard.ts` (jrackerby/estate#6 §4.2);
-parity with the kit's resolver at the commit it left is recorded in
-`tests/fixtures/banner_parity.json` and asserted by
+parity with the kit's resolver is recorded in
+`tests/fixtures/banner_parity.json` — the kit's own `directiveNow()` run over
+every state map its preview harness, design-sync previews and unit suite draw,
+at the commit the file names — and asserted case by case by
 `tests/test_banner_parity.py`.
 
 - **The cell is copy; the directive is the contract.** `banner.py` decides how
@@ -147,9 +149,34 @@ parity with the kit's resolver at the commit it left is recorded in
   `unknown` or empty is not set) and `banner.jurisdiction` (the place the
   weather fallback line names; unbound, the line names no place rather than a
   wrong one).
+- **A macro state may silence the banner, and an evacuation is never
+  silenced.** A macro that declares `masks` (the options form's "Silence the
+  banner while this is on") publishes the empty cell while it is on: no cell,
+  no instruction, no status line, no named hazard, `masked: true` and
+  `masked_by: <slug>` saying which macro did it. PARTY is what it exists for
+  — a wall facing guests does not announce the household's own security
+  posture. The exception is read off the DIRECTIVE word, so it holds at any
+  stage and holds when the stage axis cannot be read at all.
+  - **It moves no axis (RULE 7).** STAGE, DIRECTIVE and INTEGRITY resolve and
+    publish identically masked or not — severity, driver, `suppressed` record
+    and all — and no automation reading them can tell the difference. What is
+    masked is the cell, which is copy.
+  - **An unreadable macro masks nothing.** `state` is None, never False, when
+    a macro's source cannot be read, and a mask that fired on an absence
+    would take a shelter instruction off the wall because somebody deleted a
+    helper.
+  - **It is resolved here rather than per surface**, which is the whole of
+    #30 applied to one more rule: it was ha-dashboard-kit's `party.ts` and
+    therefore true of the walls alone, while the companion app and a voice
+    surface would each have needed their own copy of a rule that decides
+    whether a safety instruction is spoken. Stricter here than there, too:
+    the kit masked by resolving the stage word to `normal` and left the
+    hazard and the status line computed underneath, unreachable because the
+    banner rendered null. An attribute has no such floor, so a masked cell
+    states nothing at all.
 - **Every attribute is always present** so a consumer can tell "no cell" from
   "no matrix": `cell`, `gate`, `imperative`, `action`, `tone`, `stage_word`,
   `stage_on`, `stage_tone`, `quiet`, `evacuate`, `status` (the status line's
   parts — reason, source, duration — deduplicated against the stage word and
   each other), `hazard_driver`, `hazard_source`, `hazard_name`,
-  `hazard_window`.
+  `hazard_window`, `masked`, `masked_by`.

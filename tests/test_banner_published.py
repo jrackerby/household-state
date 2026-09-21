@@ -10,6 +10,8 @@ cell" from "no matrix".
 
 import asyncio
 
+import pytest
+
 from household_state.banner import BANNER_ATTRIBUTES, CELL_ALERT, CELL_CRIT_NONE
 from household_state.const import BIND_BANNER, bind_key
 from household_state.coordinator import HouseholdStateCoordinator
@@ -24,7 +26,7 @@ ALARM = "alarm_control_panel.test_panel"
 FRONT = "binary_sensor.front_door_sensor_door_sensor"
 
 
-def coordinator(states, bindings=None):
+def coordinator(states, bindings=None, macros=()):
     # Both DIRECTIVE rows bound and readable: an unbound one is `absent`,
     # which resolves the axis to `unknown` — correctly — and lands every
     # case below on the unavailable cell before it can test anything else.
@@ -35,13 +37,13 @@ def coordinator(states, bindings=None):
         bind_key("alarm", "entity_id"): ALARM,
     }
     merged.update(bindings or {})
-    c = HouseholdStateCoordinator(FakeHass(states), 3, merged)
+    c = HouseholdStateCoordinator(FakeHass(states), 3, merged, macros)
     c.async_arm_logging()
     return c
 
 
-def data(states, bindings=None):
-    return asyncio.run(coordinator(states, bindings)._async_update_data())
+def data(states, bindings=None, macros=()):
+    return asyncio.run(coordinator(states, bindings, macros)._async_update_data())
 
 
 HEAT = {
@@ -158,3 +160,74 @@ def test_the_attributes_are_present_and_none_before_the_first_refresh():
     attrs = DirectiveSensor(_Coordinator(None), "E").extra_state_attributes
     for key in BANNER_ATTRIBUTES:
         assert key in attrs and attrs[key] is None, key
+
+
+# ======================================================== the mask (#30)
+
+PARTY = {"slug": "party", "name": "Party", "entity_id": "input_boolean.party",
+         "on_state": "on", "masks": True}
+GUEST = {"slug": "guest", "name": "Guest", "entity_id": "input_boolean.guest",
+         "on_state": "on"}
+
+
+def test_a_masking_macro_that_is_on_silences_the_published_cell():
+    """The seam: the macro is read into `out["macros"]` and the cell is
+    resolved from that reading, in the same cycle — never off the binary
+    sensor this component publishes from it, which would be a cycle stale."""
+    states = dict(HEAT, **{"input_boolean.party": FakeState("on")})
+    out = data(states, macros=[PARTY])
+    assert out["stage"] == "elevated"          # the axis is untouched (RULE 7)
+    assert out["macros"]["party"]["state"] is True
+    b = out["banner"]
+    assert b["cell"] is None and b["gate"] == "none"
+    assert b["masked"] is True and b["masked_by"] == "party"
+    assert b["status"] == [] and b["hazard_name"] is None
+    # The negative twin: the same house with the party off states its alert.
+    states["input_boolean.party"] = FakeState("off")
+    loud = data(states, macros=[PARTY])["banner"]
+    assert loud["cell"] == CELL_ALERT and loud["masked"] is False
+    assert loud["hazard_name"] == "Heat Advisory"
+
+
+def test_a_macro_that_does_not_declare_masks_silences_nothing():
+    states = dict(HEAT, **{"input_boolean.guest": FakeState("on")})
+    out = data(states, macros=[GUEST])
+    assert out["macros"]["guest"]["state"] is True
+    assert out["banner"]["cell"] == CELL_ALERT
+    assert out["banner"]["masked"] is False and out["banner"]["masked_by"] is None
+
+
+@pytest.mark.parametrize("raw", ["unavailable", "unknown", None])
+def test_an_unreadable_masking_macro_does_not_take_the_banner_away(raw):
+    """A modifier that cannot be read publishes None, never False — and a
+    mask that fired on an absence would silence a shelter instruction
+    because somebody deleted a helper."""
+    states = dict(HEAT)
+    if raw is not None:
+        states["input_boolean.party"] = FakeState(raw)
+    out = data(states, macros=[PARTY])
+    assert out["macros"]["party"]["state"] is None
+    assert out["banner"]["cell"] == CELL_ALERT
+    assert out["banner"]["masked"] is False
+
+
+def test_the_party_never_masks_an_evacuation_end_to_end():
+    states = dict(HEAT, **{"input_boolean.party": FakeState("on")})
+    states[CAP] = FakeState(
+        "ok", cap_responses=[{"response": "Evacuate", "event": "Evacuation Immediate"}]
+    )
+    out = data(states, macros=[PARTY])
+    assert out["directive"] == "evacuate"
+    b = out["banner"]
+    assert b["cell"] == "evacuate" and b["gate"] == "evacuate"
+    assert b["masked"] is False and b["evacuate"] is True
+
+
+def test_the_first_masking_macro_that_is_on_names_itself():
+    """Two masks on: the answer is the first DECLARED, not whichever the
+    dict happened to yield first."""
+    states = dict(HEAT, **{"input_boolean.party": FakeState("on"),
+                           "input_boolean.guest": FakeState("on")})
+    guest_masks = dict(GUEST, masks=True)
+    assert data(states, macros=[PARTY, guest_masks])["banner"]["masked_by"] == "party"
+    assert data(states, macros=[guest_masks, PARTY])["banner"]["masked_by"] == "guest"

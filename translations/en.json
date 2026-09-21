@@ -43,13 +43,15 @@
           "name": "Name",
           "entity_id": "Entity to read",
           "on_state": "State that means on",
-          "icon": "Icon (optional)"
+          "icon": "Icon (optional)",
+          "masks": "Silence the banner while this is on"
         },
         "data_description": {
           "name": "Becomes the entity id — the name, lowercased, with each run of anything else turned into an underscore. Fixed at creation. Up to {max} characters.",
           "entity_id": "Any entity: an input_boolean helper, a schedule, a person, a select.",
           "on_state": "Matched exactly and case-sensitively against the entity's state. \"on\" for a helper or a schedule; \"not_home\" for a person; whatever option you chose for a select.",
-          "icon": "An mdi: icon, for example mdi:account-group."
+          "icon": "An mdi: icon, for example mdi:account-group.",
+          "masks": "While this macro is on, the household banner states nothing — no instruction, no status line, no named hazard. AN EVACUATION IS NEVER SILENCED. It moves no axis: stage, directive and integrity resolve and publish exactly as they would with this off, so automations see no difference. Use it for a party or anything else where the wall faces guests."
         }
       },
       "macro_edit": {
@@ -66,13 +68,15 @@
           "name": "Name",
           "entity_id": "Entity to read",
           "on_state": "State that means on",
-          "icon": "Icon (optional)"
+          "icon": "Icon (optional)",
+          "masks": "Silence the banner while this is on"
         },
         "data_description": {
           "name": "The friendly name. The entity id does not follow it.",
           "entity_id": "Any entity: an input_boolean helper, a schedule, a person, a select.",
           "on_state": "Matched exactly and case-sensitively against the entity's state.",
-          "icon": "An mdi: icon, for example mdi:account-group."
+          "icon": "An mdi: icon, for example mdi:account-group.",
+          "masks": "While this macro is on, the household banner states nothing except an evacuation, which is never silenced. The axes themselves are unaffected."
         }
       },
       "macro_remove": {

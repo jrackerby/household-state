@@ -162,6 +162,13 @@ class HouseholdStateOptionsFlow(config_entries.OptionsFlow):
                 "icon", description={"suggested_value": current.get("icon")}
             )
         ] = str
+        # #30. The one field here that changes what a WALL does rather than
+        # what this macro publishes: while a macro with this set is on, the
+        # banner states nothing but an evacuation. Default off — every macro
+        # defined before this field existed masks nothing.
+        schema[
+            vol.Optional("masks", default=bool(current.get("masks")))
+        ] = bool
         return vol.Schema(schema)
 
     @staticmethod
@@ -182,6 +189,9 @@ class HouseholdStateOptionsFlow(config_entries.OptionsFlow):
             fields[key] = value.strip() if isinstance(value, str) else value
         fields["on_state"] = fields["on_state"] or MACRO_DEFAULT_ON_STATE
         fields["icon"] = fields["icon"] or None
+        # A checkbox arrives as a bool; anything else (an absent field on a
+        # hand-built call) is off, never truthy-by-accident.
+        fields["masks"] = fields.get("masks") is True
         return fields
 
     async def async_step_macro_add(self, user_input=None):
