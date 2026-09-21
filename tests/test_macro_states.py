@@ -48,9 +48,10 @@ from household_state.coordinator import HouseholdStateCoordinator
 ENTRY_ID = "01ENTRYID"
 
 GUEST = {"slug": "guest", "name": "Guest", "entity_id": "input_boolean.guest",
-         "on_state": "on", "icon": None}
+         "on_state": "on", "icon": None, "masks": False}
 AWAY = {"slug": "away", "name": "Away", "entity_id": "person.sam",
-        "on_state": "not_home", "icon": "mdi:home-export-outline"}
+        "on_state": "not_home", "icon": "mdi:home-export-outline",
+        "masks": False}
 
 
 def coordinator(states=None, macros=()):
@@ -446,3 +447,42 @@ def test_the_assertions_can_fail():
     assert ent.is_on is None
     # Normalisation really does reject, rather than accepting everything.
     assert normalize_macro(dict(GUEST)) is not None
+
+
+# ============================================ the mask a macro may declare (#30)
+
+def test_masks_is_off_unless_the_row_says_true():
+    """`is True`, not truthiness. A row written before the field existed,
+    or one carrying a string, silences nothing: an installation that never
+    asked for a silent wall must never get one from a stored value's shape."""
+    assert normalize_macro(dict(GUEST))["masks"] is False
+    assert normalize_macro(dict(GUEST, masks=True))["masks"] is True
+    for value in ("yes", "true", 1, "", 0, None, [], {"a": 1}):
+        assert normalize_macro(dict(GUEST, masks=value))["masks"] is False, value
+
+
+def test_the_reading_carries_the_flag_and_the_entity_states_it():
+    """A masked wall states nothing by design, so which macro took the
+    banner away has to be readable somewhere that is not the banner."""
+    party = normalize_macro({"slug": "party", "name": "Party",
+                             "entity_id": "input_boolean.party", "masks": True})
+    reading = read(party, {"input_boolean.party": FakeState("on")})
+    assert reading["masks"] is True and reading["state"] is True
+    ent = MacroState(FakeCoordinator({"macros": {"party": reading}}), ENTRY_ID, party)
+    assert ent.extra_state_attributes["masks"] is True
+
+
+def test_the_mask_is_read_off_the_macro_state_and_never_off_an_absence():
+    """RULE 7 still holds around it: this picks a slug, it moves no axis.
+    An unreadable macro reads None and must not mask — see
+    test_banner_published.py for the same property end to end."""
+    mask = HouseholdStateCoordinator._masking_macro
+    on = {"slug": "party", "masks": True, "state": True}
+    assert mask({"party": on}) == "party"
+    assert mask({}) is None
+    assert mask({"party": dict(on, state=False)}) is None
+    assert mask({"party": dict(on, state=None)}) is None
+    assert mask({"guest": {"slug": "guest", "masks": False, "state": True}}) is None
+    # First declared wins, whatever the dict's own order would have given.
+    two = {"guest": {"slug": "guest", "masks": True, "state": True}, "party": on}
+    assert mask(two) == "guest"

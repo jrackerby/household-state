@@ -375,3 +375,67 @@ def test_the_generic_cells_are_the_only_ones_the_hazard_words():
         b = banner(directive=cell_directive, driver=hazard)
         assert b["cell"] == cell
         assert b["imperative"] == DEFAULT_TEXT[cell][0]
+
+
+# ============================================================== the mask
+
+MASK_CASES = [
+    ("elevated", "none"),
+    ("elevated", "secure"),
+    ("elevated", "shelter"),
+    ("elevated", "boil_water"),
+    ("critical", "none"),
+    ("critical", "secure"),
+    ("critical", "shelter"),
+    ("critical", "boil_water"),
+    ("normal", "none"),
+    ("unknown", "none"),
+]
+
+
+@pytest.mark.parametrize("stage,directive", MASK_CASES)
+def test_a_masking_macro_silences_every_cell_but_the_evacuation(stage, directive):
+    """#30, ported from the kit's `party.ts`: while a macro that declares
+    `masks` is on, the banner says nothing — whatever the axes resolved to
+    underneath, including the cell that cannot be read."""
+    hazard = reading("local_nws", "Tornado Warning")
+    loud = banner(stage=stage, directive=directive, driver=hazard, names_of=names_of)
+    masked = banner(stage=stage, directive=directive, driver=hazard,
+                    names_of=names_of, masked_by="party")
+    assert masked["cell"] is None and masked["gate"] == GATE_NONE
+    assert masked["masked"] is True and masked["masked_by"] == "party"
+    assert masked["imperative"] == "" and masked["action"] == ""
+    assert masked["status"] == []
+    assert masked["evacuate"] is False
+    # Silence is stricter than the kit's: no stage word, no named hazard.
+    # An attribute has no floor under it the way a null render did.
+    assert masked["stage_word"] is None and masked["stage_on"] is False
+    assert masked["stage_tone"] is None
+    for key in ("hazard_driver", "hazard_source", "hazard_name", "hazard_window"):
+        assert masked[key] is None
+    # The negative twin: with nothing masking, the same axes say their piece.
+    assert loud["masked"] is False and loud["masked_by"] is None
+    if stage != "normal":
+        assert loud["cell"] is not None
+
+
+def test_an_evacuation_is_never_masked():
+    """Off the DIRECTIVE word, not off the cell, so it holds at any stage
+    and holds when the stage axis cannot be read at all."""
+    for stage in ("normal", "elevated", "critical", "unknown", None):
+        b = banner(stage=stage, directive="evacuate", masked_by="party",
+                   driver=reading("local_nws", "Evacuation Immediate"))
+        assert b["cell"] == CELL_EVACUATE and b["gate"] == GATE_EVACUATE
+        assert b["evacuate"] is True
+        assert b["imperative"] == DEFAULT_TEXT[CELL_EVACUATE][0]
+        assert b["masked"] is False and b["masked_by"] is None
+
+
+def test_the_mask_keeps_quiet_and_the_published_attribute_set():
+    """QUIET is the sleeping house's own fact and tints the shell; the mask
+    is about what the banner SAYS. And a masked cell publishes exactly the
+    same keys as a loud one — a surface reading `cell` must never meet a
+    missing attribute it cannot tell from an older component."""
+    assert banner(quiet=True, masked_by="party")["quiet"] is True
+    assert banner(quiet=False, masked_by="party")["quiet"] is False
+    assert tuple(banner(masked_by="party").keys()) == BANNER_ATTRIBUTES

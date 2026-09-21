@@ -16,6 +16,16 @@ the dwell off the source's `detail` string exactly as hazard.ts parsed it.
 That parsing is test plumbing standing in for the coordinator, which
 carries the same facts structured (`ids`, `open_seconds`).
 
+THE MASK IS PROVEN THE SAME WAY, AND IT DIVERGES ON PURPOSE. `party.ts`
+(kit GH-198) landed after the first recording — kit c6fea2a carried no such
+file — so the fixture was regenerated at the kit commit it now names, with
+the party macro on across the axes. Where the party masks, the kit rendered
+nothing and left the stage word, the hazard and the status line computed
+underneath, unreachable because the banner returned null; the port states
+nothing at all instead, because an attribute can be read by a surface the
+kit never had. The two are compared on what a surface could reach, and the
+port's stricter silence is asserted on its own.
+
 ONE KIT CASE IS DELIBERATELY NOT HERE: the pre-0.8.0 perimeter detail shape
 (`<id> +2 more open over 300s`), which hazard.ts still accepted because a
 wall can run a kit and a component from different weeks. This module IS the
@@ -37,6 +47,11 @@ DATA = json.loads(FIXTURE.read_text(encoding="utf-8"))
 STAGE = "sensor.household_state_stage"
 DIRECTIVE = "sensor.household_state_directive"
 QUIET = "binary_sensor.household_state_quiet"
+# The kit's party macro (`party.ts`, kit GH-198). It is a macro state of
+# this component's own — `binary_sensor.household_state_party` — and the
+# bridge below hands it to the port the way the coordinator does: as a macro
+# slug that declares `masks`.
+PARTY = "binary_sensor.household_state_party"
 
 # The kit's driver token -> (SOURCES key, kind, row name, source entity). The
 # token is the PUBLISHED slug (nws_union is a #19 slug override of
@@ -120,7 +135,13 @@ def _port(states):
         names_of=names_of,
         # hazard.ts named the county in its fallback line; the port binds it.
         jurisdiction="Union County",
+        masked_by="party" if _party_on(states) else None,
     )
+
+
+def _party_on(states):
+    st = states.get(PARTY)
+    return st is not None and st["state"] == "on"
 
 
 COMPARED = (
@@ -128,18 +149,74 @@ COMPARED = (
     "stage_tone", "quiet", "hazard_source", "hazard_name", "hazard_window", "status",
 )
 
+# THE MASKED CASES ARE COMPARED ON WHAT A SURFACE COULD REACH, AND THE
+# DIVERGENCE IS THE POINT (#30). With the party on and no evacuation, the
+# kit's banner rendered NOTHING — `cell: null` returned before a word of it
+# reached the screen — and everything it had computed underneath (the stage
+# word it substituted to `normal`, the hazard, the status line) was
+# unreachable by construction. An attribute has no such floor: whatever
+# banner.py publishes can be read by a surface written next year. So the port
+# states nothing at all, and the fields below are the ones both agree on:
+# nothing mounts, and the stage pill is off.
+MASKED_COMPARED = ("cell", "evacuate", "stage_on", "quiet")
+
+# What the port publishes instead of the kit's unreachable leftovers.
+MASKED_SILENCE = {
+    "cell": None, "gate": "none", "imperative": "", "action": "",
+    "stage_word": None, "stage_on": False, "stage_tone": None,
+    "status": [], "hazard_driver": None, "hazard_source": None,
+    "hazard_name": None, "hazard_window": None,
+    "masked": True, "masked_by": "party",
+}
+
 
 def test_the_fixture_names_the_kit_commit_it_was_recorded_at():
     assert re.fullmatch(r"[0-9a-f]{40}", DATA["kit_commit"])
     assert len(DATA["cases"]) >= 50
 
 
+def _masked(expected):
+    """The kit's own verdict for a case: the party macro is on and the
+    directive is not an evacuation. Read off what the kit recorded, never
+    re-derived here — the oracle decides which cases it masked."""
+    return bool(expected.get("party")) and not expected["evacuate"]
+
+
 @pytest.mark.parametrize("case", DATA["cases"], ids=[c["title"] for c in DATA["cases"]])
 def test_the_port_renders_what_the_kit_rendered(case):
     got = _port(case["states"])
     want = case["expected"]
-    diff = {k: (want[k], got[k]) for k in COMPARED if want[k] != got[k]}
+    compared = MASKED_COMPARED if _masked(want) else COMPARED
+    diff = {k: (want[k], got[k]) for k in compared if want[k] != got[k]}
     assert not diff, diff
+    if not _masked(want):
+        assert got["masked"] is False and got["masked_by"] is None
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in DATA["cases"] if _masked(c["expected"])],
+    ids=[c["title"] for c in DATA["cases"] if _masked(c["expected"])],
+)
+def test_a_masked_case_states_nothing_at_all(case):
+    """The half the kit had no oracle for, because it never needed one: the
+    published cell is empty in every field, not merely unrendered."""
+    got = _port(case["states"])
+    assert {k: got[k] for k in MASKED_SILENCE} == MASKED_SILENCE
+
+
+def test_the_fixture_carries_masked_cases_on_both_sides_of_the_exception():
+    """A mask proven only where it fires proves half a rule."""
+    masked = [c for c in DATA["cases"] if _masked(c["expected"])]
+    evacuations = [
+        c for c in DATA["cases"]
+        if c["expected"].get("party") and c["expected"]["evacuate"]
+    ]
+    assert len(masked) >= 5 and len(evacuations) >= 2
+    for case in evacuations:
+        got = _port(case["states"])
+        assert got["cell"] == "evacuate" and got["gate"] == "evacuate"
+        assert got["masked"] is False and got["masked_by"] is None
 
 
 def test_the_comparison_can_fail():

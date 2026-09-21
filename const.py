@@ -446,6 +446,24 @@ def bind_key(source_key: str, field: str) -> str:
 # refusal as every other read in this component. A modifier that quietly reads
 # `off` because its helper was deleted is the dead-feed-reads-green defect
 # wearing a different name.
+#
+# `masks` (#30). A macro may declare that WHILE IT IS ON THE BANNER SAYS
+# NOTHING — no cell, no instruction, no status line — except an evacuation,
+# which is never masked. PARTY is the instance this exists for: a household
+# that has people over does not want the wall announcing its own security
+# posture to the room, and Joel's ruling of 2026-09-19 is that a party wall
+# says nothing from the household axes but an evacuation.
+#
+# THIS IS NOT RULE 7 BEING BENT, and the distinction is the whole reason it
+# can live here. A masking macro moves NO axis: stage, directive and
+# integrity resolve exactly as they would with the macro off, keep their
+# severities, their drivers and their `suppressed` record, and every
+# automation reading them sees no difference. What the flag changes is the
+# RENDERING of the banner cell — the same class of fact as QUIET's tint —
+# and it changes it HERE rather than in each surface, because a mask
+# resolved per surface is a mask that one surface forgets (it was
+# ha-dashboard-kit's `party.ts`, on the walls only; the companion app and a
+# voice surface would each have needed their own copy).
 OPT_MACROS = "macros"
 
 # Option keys that are NOT source bindings. __init__.py splits entry.options on
@@ -466,7 +484,7 @@ MACRO_SLUG_MAX = 40
 # Assistant never reclaims an id. If the slug tracked the name, renaming
 # "Guest" to "Guests" would mint a second entity and orphan the one every
 # dashboard reads. So a rename changes the friendly name and nothing else.
-MACRO_RENAMEABLE_FIELDS = ("name", "entity_id", "on_state", "icon")
+MACRO_RENAMEABLE_FIELDS = ("name", "entity_id", "on_state", "icon", "masks")
 
 # Slugs this integration already publishes on its own device, plus the three
 # axis names.
@@ -523,12 +541,18 @@ def normalize_macro(row) -> dict | None:
     )
     icon = row.get("icon")
     icon = icon.strip() if isinstance(icon, str) and icon.strip() else None
+    # `is True`, not truthiness: a stored row that says "no", 0 or "" must
+    # not silence a wall because a string is non-empty. Absent is False —
+    # every macro written before #30 masks nothing, which is what those
+    # installations already have.
+    masks = row.get("masks") is True
     return {
         "slug": slug,
         "name": name,
         "entity_id": entity_id.strip(),
         "on_state": on_state,
         "icon": icon,
+        "masks": masks,
     }
 
 

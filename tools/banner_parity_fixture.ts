@@ -20,6 +20,7 @@ import { it } from 'vitest';
 import { execSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { directiveNow, statusParts } from './directive';
+import { PARTY_ENTITY } from './party';
 import type { HassEntity } from './types';
 
 type State = Pick<HassEntity, 'state' | 'attributes'>;
@@ -32,6 +33,17 @@ const QUIET = 'binary_sensor.household_state_quiet';
 const NWS = 'sensor.household_state_nws_union';
 const PERIM = 'sensor.household_state_perimeter_open_sustained';
 const ALARM = 'sensor.household_state_alarm';
+const PARTY = PARTY_ENTITY;
+
+/** #30's mask, recorded from the kit's own resolver. `party.ts` landed after
+ *  the first fixture (kit c6fea2a had no such file), so the masking half of
+ *  the port had no oracle until this pass. Every case below is the kit
+ *  rendering a household that IS elevated, critical or evacuating with the
+ *  party macro on. */
+const party = (states: Record<string, State>, on = true): Record<string, State> => ({
+  ...states,
+  [PARTY]: s(on ? 'on' : 'off'),
+});
 
 const HEAT_ADVISORY: Record<string, State> = {
   [STAGE]: s('elevated', {
@@ -460,6 +472,42 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   { title: 'test: boil none elevated', states: boil('elevated', 'none') },
   { title: 'test: boil none critical', states: boil('critical', 'none') },
   { title: 'test: boil unknown directive', states: boil('elevated', 'unknown') },
+  // ---- the party mask (kit GH-198 / party.ts) --------------------------
+  { title: 'party: elevated heat advisory, masked', states: party(HEAT_ADVISORY) },
+  { title: 'party: critical tornado warning, masked', states: party(SHELTER) },
+  { title: 'party: the same house with the party off', states: party(HEAT_ADVISORY, false) },
+  {
+    title: 'party: a suppressed warning is masked too',
+    states: party({
+      [STAGE]: s('critical', { severity: 5, driver: 'nws_union', detail: 'Severe Thunderstorm Warning until 6:00PM EDT' }),
+      [DIRECTIVE]: s('none', { reason: 'suppressed_by_policy', suppressed: ['Severe Thunderstorm Warning -> Shelter'] }),
+      [QUIET]: s('off'),
+      [NWS]: s('ok', { raw_state: 'Severe Thunderstorm Warning' }),
+    }),
+  },
+  {
+    title: 'party: an evacuation is never masked',
+    states: party({
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_union' }),
+      [DIRECTIVE]: s('evacuate', { reason: 'cap_response', driver: 'Evacuation Immediate', suppressed: [] }),
+      [QUIET]: s('off'),
+      [NWS]: s('ok', { raw_state: 'Evacuation Immediate' }),
+    }),
+  },
+  {
+    title: 'party: an evacuation from a stage that cannot be read',
+    states: party({
+      [STAGE]: s('unknown', { severity: null }),
+      [DIRECTIVE]: s('evacuate', { suppressed: [] }),
+      [QUIET]: s('off'),
+    }),
+  },
+  {
+    title: 'party: an unreadable stage is masked like any other',
+    states: party({ [STAGE]: s('unknown', { severity: null }), [DIRECTIVE]: s('unknown', { suppressed: [] }), [QUIET]: s('off') }),
+  },
+  { title: 'party: quiet and masked at once', states: party({ ...HEAT_ADVISORY, [QUIET]: s('on') }) },
+  { title: 'party: boil water, masked', states: party(boil('elevated', 'boil_water')) },
 ];
 
 it('records what the kit renders for every state map', () => {
@@ -483,6 +531,9 @@ it('records what the kit renders for every state map', () => {
         hazard_name: d.hazard.name,
         hazard_window: d.hazard.window,
         status: statusParts(d),
+        // The mask's own input, recorded so the replay knows which cases
+        // the kit rendered with the party on (party.ts, kit GH-198).
+        party: d.party,
       },
     };
   });

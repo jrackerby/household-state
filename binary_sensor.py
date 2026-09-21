@@ -176,4 +176,9 @@ class MacroState(HouseholdStateEntity, BinarySensorEntity):
             "on_state": r.get("on_state"),
             "disposition": r.get("disposition"),
             "since": r.get("since"),
+            # #30. Whether this modifier silences the banner while it is on.
+            # Published here because a masked wall states nothing by design,
+            # and "which macro took the banner away" has to be readable
+            # somewhere that is not the banner.
+            "masks": r.get("masks"),
         }

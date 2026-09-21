@@ -44,6 +44,26 @@ a ramp that no longer means what `const.py` says it means.
 If a modifier genuinely *should* move an axis, that is a `SOURCES` row and a
 ruling about what it is worth — not a config change.
 
+### It may silence the banner, which is not the same thing
+
+One field on the form does change what a surface shows: **Silence the banner
+while this is on**. A macro with it ticked publishes the empty banner cell
+while it is on — no instruction, no status line, no named hazard — and
+`sensor.household_state_directive` says `masked: true` and `masked_by:
+<slug>`. PARTY is what it exists for: a wall in a room full of guests does
+not announce the household's own security posture.
+
+**An evacuation is never silenced**, at any stage, including when the stage
+axis cannot be read.
+
+This is still not an axis move. Stage, directive and integrity resolve and
+publish exactly as they would with the macro off, so every automation reading
+them sees a silenced household and a loud one identically. What is silenced
+is the banner's *copy*. And a macro whose source cannot be read silences
+nothing: it publishes `None`, never `False`, and a mask that fired on an
+absence would take a shelter instruction off the wall because a helper was
+deleted.
+
 ## The arrangement this replaces
 
 A typical `configuration.yaml`, for two modes:
@@ -99,6 +119,7 @@ state.*
 | **Entity to read** | `input_boolean.guest_mode` |
 | **State that means on** | `on` |
 | **Icon** | `mdi:account-group` |
+| **Silence the banner while this is on** | unticked — guest mode is not a party |
 
 Saving reloads the entry and `binary_sensor.household_state_guest` appears
 immediately.

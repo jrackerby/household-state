@@ -44,7 +44,9 @@ and `action` (the words), `tone` and `stage_tone`, `status` (the status
 line's parts) and `hazard_driver` / `hazard_source` / `hazard_name` /
 `hazard_window` (what is driving the stage, named). The rendering matrix is
 resolved once, in `banner.py`, so a wall, a phone and a voice surface all
-give the same answer; the rules are in
+give the same answer — including the one rule that takes the banner away: a
+macro state may declare that it silences the cell while it is on (`masked` /
+`masked_by`), and an evacuation is never silenced. The rules are in
 [docs/DESIGN_CONTRACT.md](docs/DESIGN_CONTRACT.md#the-rendering-matrix-30).
 
 ## The rules that make the answers trustworthy
