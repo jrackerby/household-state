@@ -245,4 +245,12 @@ class SourceSensor(_Base):
             "affected_entries": r.get("affected_entries"),
             "watched_count": r.get("watched_count"),
             "unwatched_count": r.get("unwatched_count"),
+            # The perimeter row's own two counts and, above all, WHICH
+            # members it cannot read. `detail` names them in one line for a
+            # human; these are the structured form an automation or a card
+            # reads without parsing a sentence. Always present, `None` on
+            # every row that is not the perimeter -- a key that appears and
+            # disappears is one a consumer cannot tell from a defect.
+            "open_count": r.get("open_count"),
+            "blind": r.get("blind"),
         }

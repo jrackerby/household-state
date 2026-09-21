@@ -388,6 +388,40 @@ def test_an_unreadable_member_makes_the_source_blind_rather_than_closed():
     assert r["disposition"] != DISP_OK or r["severity"] != 0 or r["blind"]
 
 
+def test_the_blind_detail_names_which_member_it_cannot_read():
+    """NAMED, NOT COUNTED. "1 of 8 unreadable" sent the operator to the
+    label registry to learn which door was holding STAGE at `unknown` --
+    measured on the estate 2026-09-21, thirteen hours of it. The names are
+    in hand at the moment the line is written."""
+    ereg, lreg = _registry("binary_sensor.front_door", "binary_sensor.patio",
+                           "cover.garage", label=PERIMETER_LABEL_FOR_TESTS)
+    c = coordinator({"binary_sensor.front_door": FakeState("off"),
+                     "cover.garage": FakeState("unavailable")}, ereg, lreg)
+    r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
+    assert r["blind"] == ["binary_sensor.patio", "cover.garage"]
+    assert r["detail"] == (
+        "cannot confirm closed: binary_sensor.patio, cover.garage "
+        "unreadable (2 of 3)"
+    )
+    # The count stays readable beside the names: a card that shows only
+    # "2 of 3" is still correct, and one that shows the names is now
+    # possible at all.
+    assert "2 of 3" in r["detail"]
+    for eid in r["blind"]:
+        assert eid in r["detail"]
+
+
+def test_a_closed_perimeter_names_nobody_and_carries_an_empty_blind_list():
+    """The negative twin: `blind` is a list that is EMPTY when every member
+    reads, never absent -- a consumer must not have to tell a missing key
+    from a healthy row."""
+    ereg, lreg = _registry("binary_sensor.front_door", label=PERIMETER_LABEL_FOR_TESTS)
+    c = coordinator({"binary_sensor.front_door": FakeState("off")}, ereg, lreg)
+    r = c._read_source(spec(key="perimeter_open", kind="perimeter", entity_id=None))
+    assert r["blind"] == []
+    assert "unreadable" not in r["detail"]
+
+
 # ===================================================================== ages
 
 def test_mark_records_the_moment_a_value_first_appeared():

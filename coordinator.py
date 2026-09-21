@@ -689,12 +689,27 @@ class HouseholdStateCoordinator(DataUpdateCoordinator):
 
         if blind:
             base["disposition"] = DISP_UNKNOWN
+            # NAMED, NOT COUNTED. This row is the one place a dead contact
+            # becomes visible instead of becoming a zero, and it said "1 of
+            # 8 unreadable" -- which of the eight was a question only the
+            # label registry could answer, so diagnosing a held STAGE meant
+            # walking the label by hand (measured 2026-09-21: the axis sat
+            # at `unknown` for thirteen hours and the estate could not say
+            # which door without a template query). The names existed the
+            # whole time: they went to a log line that fires ONCE per
+            # membership by design. A log is not a surface.
+            #
+            # Same shape as the sustained branch above -- comma-joined,
+            # unbounded, the glass decides how many it has room for -- so
+            # the two halves of this row read the same way.
             base["detail"] = (
                 "cannot confirm closed: "
+                + ", ".join(blind)
+                + " unreadable ("
                 + str(len(blind))
                 + " of "
                 + str(len(ents))
-                + " unreadable"
+                + ")"
             )
             # "blind", never the count: the membership moves as contacts
             # come back and every move used to re-fire this line.
