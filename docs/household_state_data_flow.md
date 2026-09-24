@@ -36,7 +36,7 @@ consumer. For **what triggers, in what order**, see
 flowchart LR
     subgraph STAGE_LINE["STAGE axis lineage"]
         direction LR
-        SA1["sensor.nws_union_threat<br/>.severity attr"] --> SF1["_read_source()<br/>int(severity) or DISP_UNPARSED"]
+        SA1["sensor.nws_example_threat<br/>.severity attr"] --> SF1["_read_source()<br/>int(severity) or DISP_UNPARSED"]
         SA2["sensor.ntas_advisory_level<br/>.severity attr"] --> SF1
         SA3["sensor.swpc_space_weather<br/>.severity attr"] --> SF1
         SA4["alarm_control_panel.alarmo<br/>.state + .open_sensors"] --> SF2["alarm_severity()<br/>resolver.py — state ladder"]
@@ -52,7 +52,7 @@ flowchart LR
 
     subgraph DIR_LINE["DIRECTIVE axis lineage"]
         direction LR
-        DA1["sensor.nws_union_threat<br/>.cap_responses attr — SAME entity as SA1,<br/>different attribute"] --> DF1["_read_source(kind='cap')<br/>-> list of {response, event} pairs"]
+        DA1["sensor.nws_example_threat<br/>.cap_responses attr — SAME entity as SA1,<br/>different attribute"] --> DF1["_read_source(kind='cap')<br/>-> list of {response, event} pairs"]
         DF1 --> RES2["resolve_directive():<br/>response-field classifier +<br/>event-name classifier, both run<br/>on every pair; suppression list;<br/>precedence EVACUATE>SHELTER>SECURE"]
         RES2 -->|"directive, reason, driver, suppressed"| DEO["sensor.household_state_directive<br/>attrs: reason/driver/suppressed/source_count/since"]
     end
@@ -64,7 +64,7 @@ flowchart LR
         IA3["sensor.critical_networking_device_health<br/>.integrity/_detail/_affected"] --> IF1
         IA4["kiosk_pi entity registry (platform+tail)<br/>-> each sensor.&lt;host&gt;_live_page's<br/>.diverged/.read_unreachable (pre-dwelled<br/>by kiosk_pi itself)"] --> IF4["_read_live_page(kind='live_page')<br/>GH-55/KAN-311 — no dwell of its own,<br/>aggregates across every discovered host"]
         IA5["config_entries.async_entries() (every domain)<br/>+ entity registry per entry"] --> IF5["_read_config_entries(kind='config_entries')<br/>GH-55/KAN-311 — setup_retry OR loaded+all-<br/>entities-dead; CONFIG_ENTRY_DWELL (300s)"]
-        IA6["services.has_service('notify',<br/>'mobile_app_joels_iphone')<br/>+ notify.joels_iphone state (informational)"] --> IF6["_read_notify_health(kind='notify_health')<br/>GH-55/KAN-311 — target registered or not;<br/>staleness never judged"]
+        IA6["services.has_service('notify',<br/>'mobile_app_example_phone')<br/>+ notify.example_phone state (informational)"] --> IF6["_read_notify_health(kind='notify_health')<br/>GH-55/KAN-311 — target registered or not;<br/>staleness never judged"]
         IF4 --> RES3
         IF5 --> RES3
         IF6 --> RES3
@@ -83,7 +83,7 @@ flowchart LR
 
     DEO -.->|"LAW §11 hard gate: no directive<br/>surface until EVACUATE has a<br/>verified input (KAN-308 open)"| C3["no consumer"]
 
-    IEO --> C4["packages/household_state_integrity_notify.yaml<br/>reads .detail + .sources_detail -><br/>notify.mobile_app_joels_iphone"]
+    IEO --> C4["packages/household_state_integrity_notify.yaml<br/>reads .detail + .sources_detail -><br/>notify.mobile_app_example_phone"]
     IEO --> C5["www/integrity-card.js<br/>parses .sources_detail for its<br/>per-source breakdown table"]
     IEO --> C6["www/room-panel.js<br/>integrityEntity config (opt-in) reads<br/>.state for the integrity ring"]
 
@@ -100,7 +100,7 @@ flowchart LR
 
 ## Cross-axis fact: two rows, one entity, disjoint attributes
 
-`sensor.nws_union_threat` feeds **two different axes** off two different
+`sensor.nws_example_threat` feeds **two different axes** off two different
 attributes of the same entity read (`.severity` into STAGE, `.cap_responses`
 into DIRECTIVE) — one HA state read, two independent data lineages. The
 same shape repeats for `sensor.fls_device_status`, which feeds **two

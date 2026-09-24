@@ -36,8 +36,8 @@ flowchart TB
     subgraph EXT["System context — outside household_state"]
         direction TB
         HACORE["HA core: state machine, entity/label registry,\nStore helper, DataUpdateCoordinator base class"]
-        SRC5["Upstream entity sources (8-plus):\nsensor.nws_union_threat, sensor.ntas_advisory_level,\nsensor.swpc_space_weather, alarm_control_panel.alarmo,\nfls_device-labeled binary_sensor/cover,\nsensor.fls_device_status, sensor.critical_networking_device_health,\ninput_boolean.sleep_mode"]
-        SRC6["KAN-311 sources (GH-55), entity_id None,\ndiscovered/checked live every poll:\nkiosk_pi live_page entities (registry,\nplatform+unique_id tail), config_entries\nregistry (every domain, generic shape),\nnotify.mobile_app_joels_iphone service\nregistration + notify.joels_iphone state"]
+        SRC5["Upstream entity sources (8-plus):\nsensor.nws_example_threat, sensor.ntas_advisory_level,\nsensor.swpc_space_weather, alarm_control_panel.alarmo,\nfls_device-labeled binary_sensor/cover,\nsensor.fls_device_status, sensor.critical_networking_device_health,\ninput_boolean.sleep_mode"]
+        SRC6["KAN-311 sources (GH-55), entity_id None,\ndiscovered/checked live every poll:\nkiosk_pi live_page entities (registry,\nplatform+unique_id tail), config_entries\nregistry (every domain, generic shape),\nnotify.mobile_app_example_phone service\nregistration + notify.example_phone state"]
         AUTOPKG["packages/household_state_integrity_notify.yaml\n(automation package)"]
         INTCARD["www/integrity-card.js"]
         ROOMPANEL["www/room-panel.js\n(integrityEntity, opt-in)"]
@@ -152,7 +152,7 @@ concentrated there, one layer above the pure logic.
   `config_entries.async_entries()` walk plus per-entry entity-registry
   reads (`config_entry_health`, generic across every domain), and
   `services.has_service()` against the hardcoded notify target plus a
-  raw state read of `notify.joels_iphone` (`notify_health`).
+  raw state read of `notify.example_phone` (`notify_health`).
 - **Out of `household_state`**: six entity classes under one device,
   read by consumers via normal HA entity state (`hass.states`), never a
   direct Python import — `www/*.js` cards and `packages/*.yaml`

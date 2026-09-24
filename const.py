@@ -263,7 +263,7 @@ DIRECTIVE_EVENT_MAP = {
 # to critical on its own. What is suppressed is the closet instruction,
 # not the alert.
 #
-# EXTENDED, a later audit of the alert vocabulary, RULED BY JOEL: four more event types NWS itself
+# EXTENDED, a later audit of the alert vocabulary, RULED: four more event types NWS itself
 # describes as not household-actionable — Local Area Emergency is
 # explicitly defined as NOT by itself posing a significant threat, Child
 # Abduction Emergency (AMBER) calls for awareness rather than locking a
@@ -307,7 +307,7 @@ CAP_ABSENT = "__absent__"
 PERIMETER_LABEL = None          # bind: perimeter.label
 
 # THE LABEL THAT PUTS A DEVICE OR ENTITY IN SCOPE FOR INTEGRITY (#28).
-# OPT-IN, RULED BY JOEL, REVERSING #26'S OPT-OUT: the config-entry row
+# OPT-IN, RULED, REVERSING #26'S OPT-OUT: the config-entry row
 # watches ONLY what carries this label, or sits on a device that does.
 # Anything unlabelled is not this row's business. The earlier premise --
 # every config entry, generically, with an opt-out for devices whose off
@@ -451,7 +451,7 @@ def bind_key(source_key: str, field: str) -> str:
 # NOTHING — no cell, no instruction, no status line — except an evacuation,
 # which is never masked. PARTY is the instance this exists for: a household
 # that has people over does not want the wall announcing its own security
-# posture to the room, and Joel's ruling of 2026-09-19 is that a party wall
+# posture to the room, and the ruling of 2026-09-19 is that a party wall
 # says nothing from the household axes but an evacuation.
 #
 # THIS IS NOT RULE 7 BEING BENT, and the distinction is the whole reason it
@@ -820,7 +820,7 @@ SOURCES = (
     # under two different names neither of which said "life safety" or
     # "perimeter").
     #
-    # LABEL-DRIVEN, PER JOEL'S ASK. Every device in Fire Life Safety and
+    # LABEL-DRIVEN, BY RULING. Every device in Fire Life Safety and
     # Security is still discovered off the `fls_device` label at render time
     # in the fire/life-safety package (fire_life_safety_*/security_*
     # attributes) -- adding a device is still a relabel, never a code
@@ -944,7 +944,7 @@ SOURCES = (
         "axis": AXIS_INTEGRITY,
     },
     {
-        # A buildable third check: does the hardcoded notify TARGET
+        # A buildable third check: does the BOUND notify TARGET
         # the integrity-notification automation calls still
         # exist. THE HONEST CEILING, named rather than glossed over: HA
         # gets no APNs delivery receipt, so this can never confirm a push
@@ -960,7 +960,7 @@ SOURCES = (
         # as a false failure — the "monitor whose blind spot correlates
         # with what it monitors" trap — and a VISIBLE heartbeat
         # means a recurring banner on an operator's phone forever, a standing
-        # behaviour change on his own device this file has no business
+        # behaviour change on the operator's own device this file has no business
         # making unilaterally. last_sent_entity_id is carried as an
         # INFORMATIONAL attribute, never judged against a threshold —
         # staleness during a quiet week is not evidence of anything.
