@@ -17,7 +17,7 @@ refactor. Rendering rules for the surfaces that consume these axes live in
 - **QUIET** is a boolean modifier, `binary_sensor.household_state_quiet` -
   READ-ONLY, mirrors `input_boolean.sleep_mode`, suppresses nothing on any axis
   and **OWNS NO WORDS ON ANY SURFACE**. It renders as the shell field and ring
-  and as a tint, never as a row of text (Joel: "I don't need the sleep mode
+  and as a tint, never as a row of text (by ruling: "I don't need the sleep mode
   text").
 
 ### DIRECTIVE vocabulary
@@ -25,7 +25,7 @@ refactor. Rendering rules for the surfaces that consume these axes live in
 Precedence, most urgent first: EVACUATE > SHELTER > SECURE > BOIL_WATER > none.
 
 - `secure`, `shelter`, `evacuate` say where the household should BE.
-- `boil_water` (Joel, ruling, GH-583) says what it must not DRINK - the one
+- `boil_water` (by ruling, GH-583) says what it must not DRINK - the one
   directive that is not a movement instruction, and the LOWEST precedence
   deliberately: water you must boil is not a reason to stay out of the closet.
   Its source is the water utility's boil-water advisory (`SOURCES` row
@@ -38,13 +38,13 @@ Precedence, most urgent first: EVACUATE > SHELTER > SECURE > BOIL_WATER > none.
   and never green. INTEGRITY never moves STAGE** - no `severity` key on the
   integrity entity.
 - **INTEGRITY SURFACES ON THE OPERATOR BOARD ONLY, never on a household control
-  wall** (Joel, ruling). `IntegrityBadge` mounts on the operator surface alone;
+  wall** (by ruling). `IntegrityBadge` mounts on the operator surface alone;
   which app that is, is inventory - read it live.
 - **INTEGRITY ANSWERS FOR WHAT THE HOUSEHOLD DEPENDS ON, NEVER FOR WHAT ONE
-  SCREEN IS SHOWING** (Joel, ruling, jrackerby/HA#717). The board SERVER dark is
+  SCREEN IS SHOWING** (by ruling). The board SERVER dark is
   an integrity fault; a panel on the wrong page is its own integration's
   finding, published there.
-- **INTEGRITY'S CONFIG-ENTRY SCOPE IS OPT-IN** (Joel, ruling, #28, reversing
+- **INTEGRITY'S CONFIG-ENTRY SCOPE IS OPT-IN** (by ruling, #28, reversing
   #26's opt-out): a label (`integrity_watched`, bindable) puts a device or
   entity IN scope; anything unlabelled is not the row's business under any
   shape. A label that does not resolve, or that nothing carries, is `absent`,
@@ -63,7 +63,7 @@ Precedence, most urgent first: EVACUATE > SHELTER > SECURE > BOIL_WATER > none.
   function.
 - `SOURCES` in `const.py` is one list; a source is one row with an `axis`.
 
-## The hard gate (RULED BY JOEL, supersedes the prior wording)
+## The hard gate (RULED, supersedes the prior wording)
 
 A directive surface may ship on `resolver.py`'s deterministic
 EVACUATE/SHELTER/SECURE classification tests (event names verified live against

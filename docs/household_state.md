@@ -53,7 +53,7 @@ Three axes, not one ramp (LAW §11):
 |---|---|---|---|
 | **STAGE** | normal / elevated / critical / unknown | Household | How urgent is it right now? |
 | **DIRECTIVE** | none / secure / shelter / evacuate / unknown | Household | What do I physically do? |
-| **INTEGRITY** | ok / degraded / unknown | Operator (Joel) | Can I trust the other two axes? |
+| **INTEGRITY** | ok / degraded / unknown | Operator | Can I trust the other two axes? |
 
 INTEGRITY is a different audience, not a lower intensity — it never
 moves STAGE, and there is no severity number on that axis by construction.
@@ -88,7 +88,7 @@ entity means.
 - **Upstream entities it reads** (none of these are declared as HA
   dependencies; a missing one degrades a source, it does not stop
   startup — see §5 Failure modes):
-  - `sensor.nws_union_threat` (`packages/nws_alerts.yaml`) — `severity`,
+  - `sensor.nws_example_threat` (`packages/nws_alerts.yaml`) — `severity`,
     `headline`, `cap_responses` attributes. Feeds STAGE and, via
     `cap_responses`, DIRECTIVE.
   - `sensor.ntas_advisory_level` (`packages/ntas_national.yaml`) — `severity`.
@@ -128,19 +128,19 @@ entity means.
       `ok`. `CONFIG_ENTRY_DWELL` (300s, `const.py`) holds a fresh bad
       reading before it counts — the one INTEGRITY row with no upstream
       dwell of its own, so without this a normal ~60-90s restart window
-      would page Joel before HA finished starting. `affected_entries`
+      would page the operator before HA finished starting. `affected_entries`
       carries the full finding list (`integrity_detail` is only its
       headline); `watched_count` / `unwatched_count` state the scope's size.
     - `notify_health` — `services.has_service("notify",
-      "mobile_app_joels_iphone")`, the notify target
+      "mobile_app_example_phone")`, the notify target
       `packages/household_state_integrity_notify.yaml` hardcodes. Catches
-      a device re-pair silently orphaning that target. `notify.joels_iphone`'s
+      a device re-pair silently orphaning that target. `notify.example_phone`'s
       state (last successful send) rides along as an informational
       attribute, never judged against a threshold — HA gets no APNs
       delivery receipt, and staleness during a quiet week is not evidence
       of anything. A delivery-freshness heartbeat was considered and
       rejected (Apple throttles silent pushes to ~5/device/day; a visible
-      one means a recurring banner on Joel's phone forever) — see
+      one means a recurring banner on the operator's phone forever) — see
       `const.py`'s `SOURCES` comment on this row for the full reasoning.
 - **Storage**: `.storage/household_state.ages` (HA `Store` helper,
   version 1; `household_alert.ages` before the rename — the store key
@@ -208,11 +208,11 @@ entity disappearing.
 | Coordinator's own read logic throws | **Never raises `UpdateFailed`** — always returns a dict | RULE 1: raising takes every entity unavailable and their attributes vanish, which is how a broken collector reads green |
 | CAP `response` missing on an alert | Directive `unknown`, reason `cap_response_absent_on_N_alert` — **unless** a positive directive was already found on another alert | KAN-139 applied to the directive axis |
 | `input_boolean.sleep_mode` missing/unavailable/unknown | `binary_sensor.household_state_quiet` reads `is_on: None`, never `False` | same KAN-139 shape — an unreadable source must never read as a real negative |
-| A config entry sits in `setup_retry`, or `loaded` with 100% of owned entities unavailable, for < `CONFIG_ENTRY_DWELL` (300s) | Not yet counted | avoids paging Joel during a normal ~60-90s restart window |
+| A config entry sits in `setup_retry`, or `loaded` with 100% of owned entities unavailable, for < `CONFIG_ENTRY_DWELL` (300s) | Not yet counted | avoids paging the operator during a normal ~60-90s restart window |
 | A config entry's outage is partial (some but not all owned entities unavailable) | Never counted, even past the dwell | a deliberate choice to avoid false positives — "some entities down" is common and often benign |
 | A kiosk's live_page diverges from kiosk.sh, or DevTools stops answering | `kiosk_live_page` row degrades **only** once `kiosk_pi`'s own pre-dwelled `diverged`/`read_unreachable` booleans say so | no re-thresholding here — one accessor, owned by the component that polls the host |
-| `notify.mobile_app_joels_iphone` is no longer a registered service (device re-paired) | `notify_health` row degrades | the real, previously-uncaught failure mode this row exists for |
-| `notify.joels_iphone`'s last-send timestamp is old | **Never** treated as degraded on its own | staleness during a quiet week with no alerts is not evidence of anything — see `const.py`'s `SOURCES` comment |
+| `notify.mobile_app_example_phone` is no longer a registered service (device re-paired) | `notify_health` row degrades | the real, previously-uncaught failure mode this row exists for |
+| `notify.example_phone`'s last-send timestamp is old | **Never** treated as degraded on its own | staleness during a quiet week with no alerts is not evidence of anything — see `const.py`'s `SOURCES` comment |
 
 ## 6. Current consumers (as of 2026-08-24)
 

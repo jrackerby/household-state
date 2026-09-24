@@ -315,10 +315,10 @@ def test_a_bound_slug_preserves_a_legacy_published_id():
     from household_state.sensor import SourceSensor
 
     spec = row("local_nws")
-    c = coordinator({}, {bind_key("local_nws", "slug"): "nws_union"})
+    c = coordinator({}, {bind_key("local_nws", "slug"): "nws_example"})
     ent = SourceSensor(c, "01ENTRY", spec)
-    assert ent._attr_unique_id == "01ENTRY_src_nws_union"
-    assert c.slug_for(spec) == "nws_union"
+    assert ent._attr_unique_id == "01ENTRY_src_nws_example"
+    assert c.slug_for(spec) == "nws_example"
 
 
 def test_an_unbound_slug_mints_the_id_from_the_key():
@@ -336,11 +336,11 @@ def test_the_driver_token_is_the_published_slug_not_the_internal_key():
 
     c = coordinator({"sensor.threat": FakeState("Elevated", severity=5)},
                     {bind_key("local_nws", "entity_id"): "sensor.threat",
-                     bind_key("local_nws", "slug"): "nws_union"})
+                     bind_key("local_nws", "slug"): "nws_example"})
     reading = c._read_source(row("local_nws"))
-    assert reading["slug"] == "nws_union"
+    assert reading["slug"] == "nws_example"
     out = resolve([reading])
-    assert out["driver"] == "nws_union", "driver must be the published slug"
+    assert out["driver"] == "nws_example", "driver must be the published slug"
 
 
 def test_every_row_can_have_its_slug_bound():

@@ -71,9 +71,9 @@ def test_the_coordinator_attaches_the_cell_and_names_the_driver_it_published():
 def test_the_driver_is_found_by_its_published_slug_not_its_key():
     """#19: an installation that kept a legacy id publishes `driver` as the
     bound slug, and the matrix must follow that identity."""
-    out = data(HEAT, {bind_key("local_nws", "slug"): "nws_union"})
-    assert out["driver"] == "nws_union"
-    assert out["banner"]["hazard_driver"] == "nws_union"
+    out = data(HEAT, {bind_key("local_nws", "slug"): "nws_example"})
+    assert out["driver"] == "nws_example"
+    assert out["banner"]["hazard_driver"] == "nws_example"
     assert out["banner"]["hazard_name"] == "Heat Advisory"
 
 

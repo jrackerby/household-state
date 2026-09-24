@@ -30,7 +30,7 @@ const hass = (entries: Record<string, State>) => ({ states: new Map(Object.entri
 const STAGE = 'sensor.household_state_stage';
 const DIRECTIVE = 'sensor.household_state_directive';
 const QUIET = 'binary_sensor.household_state_quiet';
-const NWS = 'sensor.household_state_nws_union';
+const NWS = 'sensor.household_state_nws_example';
 const PERIM = 'sensor.household_state_perimeter_open_sustained';
 const ALARM = 'sensor.household_state_alarm';
 const PARTY = PARTY_ENTITY;
@@ -47,7 +47,7 @@ const party = (states: Record<string, State>, on = true): Record<string, State> 
 
 const HEAT_ADVISORY: Record<string, State> = {
   [STAGE]: s('elevated', {
-    severity: 2, band: 'Elevated', driver: 'nws_union',
+    severity: 2, band: 'Elevated', driver: 'nws_example',
     detail: 'Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS',
   }),
   [DIRECTIVE]: s('none', { reason: 'no_directive_response', suppressed: [] }),
@@ -58,7 +58,7 @@ const HEAT_ADVISORY: Record<string, State> = {
 };
 
 const SHELTER: Record<string, State> = {
-  [STAGE]: s('critical', { severity: 7, driver: 'nws_union' }),
+  [STAGE]: s('critical', { severity: 7, driver: 'nws_example' }),
   [DIRECTIVE]: s('shelter', { reason: 'cap_response', driver: 'Tornado Warning', suppressed: [] }),
   [QUIET]: s('off'),
   [NWS]: s('ok', { raw_state: 'Tornado Warning' }),
@@ -76,7 +76,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
     title: 'preview: ELEVATED · Heat Advisory',
     states: {
       [STAGE]: s('elevated', {
-        severity: 2, band: 'Elevated', driver: 'nws_union',
+        severity: 2, band: 'Elevated', driver: 'nws_example',
         detail: 'Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS Greenville-Spartanburg SC',
       }),
       [DIRECTIVE]: s('none', { reason: 'no_directive_response', suppressed: [] }),
@@ -88,7 +88,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'preview: CRITICAL · Severe Thunderstorm Warning (directive suppressed)',
     states: {
-      [STAGE]: s('critical', { severity: 5, driver: 'nws_union', detail: 'Severe Thunderstorm Warning until 6:00PM EDT' }),
+      [STAGE]: s('critical', { severity: 5, driver: 'nws_example', detail: 'Severe Thunderstorm Warning until 6:00PM EDT' }),
       [DIRECTIVE]: s('none', { reason: 'suppressed_by_policy', suppressed: ['Severe Thunderstorm Warning -> Shelter'] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Severe Thunderstorm Warning' }),
@@ -97,7 +97,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'preview: CRITICAL · Tornado Warning → SHELTER',
     states: {
-      [STAGE]: s('critical', { severity: 7, driver: 'nws_union', detail: 'Tornado Warning until 3:15PM EDT' }),
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_example', detail: 'Tornado Warning until 3:15PM EDT' }),
       [DIRECTIVE]: s('shelter', { reason: 'cap_response', driver: 'Tornado Warning', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Tornado Warning' }),
@@ -146,7 +146,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'preview: ELEVATED · Wind Advisory, with QUIET on',
     states: {
-      [STAGE]: s('elevated', { severity: 2, driver: 'nws_union', detail: 'Wind Advisory issued September 3 at 6:02AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
+      [STAGE]: s('elevated', { severity: 2, driver: 'nws_example', detail: 'Wind Advisory issued September 3 at 6:02AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
       [DIRECTIVE]: s('none', { suppressed: [] }),
       [QUIET]: s('on'),
       [NWS]: s('ok', { raw_state: 'Wind Advisory' }),
@@ -184,7 +184,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'preview: EVACUATE',
     states: {
-      [STAGE]: s('critical', { severity: 7, driver: 'nws_union' }),
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_example' }),
       [DIRECTIVE]: s('evacuate', { reason: 'cap_response', driver: 'Evacuation Immediate', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Evacuation Immediate' }),
@@ -202,7 +202,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'preview header: cell=quiet',
     states: {
-      [STAGE]: s('elevated', { severity: 2, driver: 'nws_union', detail: 'Heat Advisory issued September 3 at 3:29AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
+      [STAGE]: s('elevated', { severity: 2, driver: 'nws_example', detail: 'Heat Advisory issued September 3 at 3:29AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
       [DIRECTIVE]: s('none', { reason: 'no_directive_response', suppressed: [] }),
       [QUIET]: s('on'),
       [NWS]: s('ok', { raw_state: 'Heat Advisory' }),
@@ -212,7 +212,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: Elevated',
     states: {
-      [STAGE]: s('elevated', { severity: 2, driver: 'nws_union', detail: 'Heat Advisory issued September 9 at 3:29AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
+      [STAGE]: s('elevated', { severity: 2, driver: 'nws_example', detail: 'Heat Advisory issued September 9 at 3:29AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
       [DIRECTIVE]: s('none', { reason: 'no_directive_response', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Heat Advisory' }),
@@ -221,7 +221,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: SecureCells (elevated)',
     states: {
-      [STAGE]: s('elevated', { severity: 3, driver: 'nws_union', detail: 'Law Enforcement Warning until 9:45PM' }),
+      [STAGE]: s('elevated', { severity: 3, driver: 'nws_example', detail: 'Law Enforcement Warning until 9:45PM' }),
       [DIRECTIVE]: s('secure', { reason: 'cap_response', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Law Enforcement Warning' }),
@@ -230,7 +230,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: SecureCells (critical)',
     states: {
-      [STAGE]: s('critical', { severity: 6, driver: 'nws_union', detail: 'Civil Danger Warning until 11:00PM' }),
+      [STAGE]: s('critical', { severity: 6, driver: 'nws_example', detail: 'Civil Danger Warning until 11:00PM' }),
       [DIRECTIVE]: s('secure', { reason: 'cap_response', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Civil Danger Warning' }),
@@ -239,7 +239,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: ShelterCells (elevated)',
     states: {
-      [STAGE]: s('elevated', { severity: 4, driver: 'nws_union', detail: 'Tornado Watch until 8:00PM EDT' }),
+      [STAGE]: s('elevated', { severity: 4, driver: 'nws_example', detail: 'Tornado Watch until 8:00PM EDT' }),
       [DIRECTIVE]: s('shelter', { reason: 'cap_response', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Tornado Watch' }),
@@ -248,7 +248,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: ShelterCells (critical)',
     states: {
-      [STAGE]: s('critical', { severity: 7, driver: 'nws_union', detail: 'Tornado Warning until 3:15PM EDT' }),
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_example', detail: 'Tornado Warning until 3:15PM EDT' }),
       [DIRECTIVE]: s('shelter', { reason: 'cap_response', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Tornado Warning' }),
@@ -257,7 +257,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: QuietTint',
     states: {
-      [STAGE]: s('elevated', { severity: 2, driver: 'nws_union', detail: 'Wind Advisory issued September 9 at 6:02AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
+      [STAGE]: s('elevated', { severity: 2, driver: 'nws_example', detail: 'Wind Advisory issued September 9 at 6:02AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC' }),
       [DIRECTIVE]: s('none', { suppressed: [] }),
       [QUIET]: s('on'),
       [NWS]: s('ok', { raw_state: 'Wind Advisory' }),
@@ -266,7 +266,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'design-sync: Suppressed',
     states: {
-      [STAGE]: s('critical', { severity: 5, driver: 'nws_union', detail: 'Severe Thunderstorm Warning until 6:00PM' }),
+      [STAGE]: s('critical', { severity: 5, driver: 'nws_example', detail: 'Severe Thunderstorm Warning until 6:00PM' }),
       [DIRECTIVE]: s('none', { reason: 'suppressed_by_policy', suppressed: ['Severe Thunderstorm Warning -> Shelter'] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Severe Thunderstorm Warning' }),
@@ -313,7 +313,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'test: crit_none worded from the hazard',
     states: {
-      [STAGE]: s('critical', { severity: 5, driver: 'nws_union', detail: 'STW until 6PM' }),
+      [STAGE]: s('critical', { severity: 5, driver: 'nws_example', detail: 'STW until 6PM' }),
       [DIRECTIVE]: s('none', { reason: 'suppressed_by_policy', suppressed: ['Severe Thunderstorm Warning -> Shelter'] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Severe Thunderstorm Warning' }),
@@ -394,7 +394,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'test: unmapped weather event',
     states: {
-      [STAGE]: s('elevated', { severity: 1, driver: 'nws_union' }),
+      [STAGE]: s('elevated', { severity: 1, driver: 'nws_example' }),
       [DIRECTIVE]: s('none', { suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Rip Current Statement' }),
@@ -403,7 +403,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'test: quiet never tints a critical',
     states: {
-      [STAGE]: s('critical', { severity: 5, driver: 'nws_union' }),
+      [STAGE]: s('critical', { severity: 5, driver: 'nws_example' }),
       [DIRECTIVE]: s('none', { suppressed: [] }),
       [QUIET]: s('on'),
       [NWS]: s('ok', { raw_state: 'Severe Thunderstorm Warning' }),
@@ -412,7 +412,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'test: evacuate keeps its fixed imperative',
     states: {
-      [STAGE]: s('critical', { severity: 7, driver: 'nws_union' }),
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_example' }),
       [DIRECTIVE]: s('evacuate', { driver: 'Evacuation Immediate', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Evacuation Immediate' }),
@@ -431,7 +431,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'test: headline that is only the name',
     states: {
-      [STAGE]: s('elevated', { severity: 2, driver: 'nws_union', detail: 'Heat Advisory' }),
+      [STAGE]: s('elevated', { severity: 2, driver: 'nws_example', detail: 'Heat Advisory' }),
       [DIRECTIVE]: s('none', { suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Heat Advisory' }),
@@ -440,7 +440,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'test: critical shelter with quiet on',
     states: {
-      [STAGE]: s('critical', { severity: 7, driver: 'nws_union' }),
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_example' }),
       [DIRECTIVE]: s('shelter', { suppressed: [] }),
       [QUIET]: s('on'),
     },
@@ -479,7 +479,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'party: a suppressed warning is masked too',
     states: party({
-      [STAGE]: s('critical', { severity: 5, driver: 'nws_union', detail: 'Severe Thunderstorm Warning until 6:00PM EDT' }),
+      [STAGE]: s('critical', { severity: 5, driver: 'nws_example', detail: 'Severe Thunderstorm Warning until 6:00PM EDT' }),
       [DIRECTIVE]: s('none', { reason: 'suppressed_by_policy', suppressed: ['Severe Thunderstorm Warning -> Shelter'] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Severe Thunderstorm Warning' }),
@@ -488,7 +488,7 @@ const CASES: { title: string; states: Record<string, State> }[] = [
   {
     title: 'party: an evacuation is never masked',
     states: party({
-      [STAGE]: s('critical', { severity: 7, driver: 'nws_union' }),
+      [STAGE]: s('critical', { severity: 7, driver: 'nws_example' }),
       [DIRECTIVE]: s('evacuate', { reason: 'cap_response', driver: 'Evacuation Immediate', suppressed: [] }),
       [QUIET]: s('off'),
       [NWS]: s('ok', { raw_state: 'Evacuation Immediate' }),

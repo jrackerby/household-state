@@ -54,10 +54,10 @@ QUIET = "binary_sensor.household_state_quiet"
 PARTY = "binary_sensor.household_state_party"
 
 # The kit's driver token -> (SOURCES key, kind, row name, source entity). The
-# token is the PUBLISHED slug (nws_union is a #19 slug override of
+# token is the PUBLISHED slug (nws_example is a #19 slug override of
 # local_nws on the estate the kit was written against).
 KIT_DRIVERS = {
-    "nws_union": ("local_nws", "severity_attr", "Local NWS", "sensor.household_state_nws_union"),
+    "nws_example": ("local_nws", "severity_attr", "Local NWS", "sensor.household_state_nws_example"),
     "ntas": ("ntas", "severity_attr", "NTAS Advisory", "sensor.household_state_ntas_advisory"),
     "space_weather": ("space_weather", "severity_attr", "Space Weather",
                       "sensor.household_state_space_weather"),

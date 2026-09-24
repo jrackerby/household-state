@@ -127,7 +127,7 @@ def test_the_highest_healthy_severity_wins():
 
 
 def test_a_tie_is_broken_by_tiebreak_order_not_by_input_order():
-    """TIEBREAK is alarm, perimeter_open, nws_union, ntas, space_weather. The
+    """TIEBREAK is alarm, perimeter_open, nws_example, ntas, space_weather. The
     rows are fed in the opposite order to prove the resolver is not simply
     taking the first thing it sees."""
     out = resolve([stage("space_weather", 4), stage("ntas", 4), stage("alarm", 4)])

@@ -24,7 +24,7 @@ flowchart TD
         R1["Look up each SOURCES row's entity_id<br/>via hass.states.get()"]
         R2["Perimeter row: resolve fls_device label<br/>live via label/entity registry, never a pinned list"]
         R3["QUIET: read input_boolean.sleep_mode raw,<br/>outside SOURCES entirely"]
-        R5["GH-55/KAN-311, entity_id None rows:<br/>kiosk_pi live_page entities (registry query),<br/>config_entries (every domain, CONFIG_ENTRY_DWELL),<br/>notify.mobile_app_joels_iphone service check"]
+        R5["GH-55/KAN-311, entity_id None rows:<br/>kiosk_pi live_page entities (registry query),<br/>config_entries (every domain, CONFIG_ENTRY_DWELL),<br/>notify.mobile_app_example_phone service check"]
         R1 --> R4["Assign one disposition per source:<br/>ok / absent / unreachable / unknown / unparsed<br/>— never severity 0 for a source that couldn't be read"]
         R2 --> R4
         R5 --> R4
@@ -34,7 +34,7 @@ flowchart TD
 
     subgraph RESORDER["Resolution order inside resolve()"]
         direction TB
-        ST1["1. STAGE — walk TIEBREAK (alarm, perimeter_open,<br/>nws_union, ntas, space_weather) in fixed order;<br/>take highest severity among healthy rows.<br/>Any unhealthy row present while healthy rows are<br/>idle forces severity=None -> unknown, not normal.<br/>No driver named at severity 0."]
+        ST1["1. STAGE — walk TIEBREAK (alarm, perimeter_open,<br/>nws_example, ntas, space_weather) in fixed order;<br/>take highest severity among healthy rows.<br/>Any unhealthy row present while healthy rows are<br/>idle forces severity=None -> unknown, not normal.<br/>No driver named at severity 0."]
         ST2["2. DIRECTIVE — resolve_directive() runs two<br/>independent classifiers per CAP pair (response-field<br/>map, event-name map), checks the suppression list,<br/>then picks the most urgent finding by fixed<br/>precedence EVACUATE > SHELTER > SECURE.<br/>A suppression is always recorded, never silent."]
         ST3["3. INTEGRITY — any unreadable integrity row -><br/>unknown (outranks degraded); else any row degraded<br/>-> degraded; else ok. Builds a per-source<br/>sources_detail breakdown across every integrity row."]
         ST4["4. QUIET — read straight off input_boolean.sleep_mode,<br/>outside resolve() entirely (not a resolve() input).<br/>None when source missing/unavailable/unknown;<br/>else the literal on/off state."]
@@ -57,7 +57,7 @@ flowchart TD
     ENTITIES --> E6["binary_sensor.household_state_quiet changes"]
 
     E3 --> AUTO["State-change trigger:<br/>automation household_alert_integrity_operator_notification<br/>(id kept stable across the rename)"]
-    AUTO --> PUSH["notify.mobile_app_joels_iphone<br/>time-sensitive iff Fire Life Safety row degraded"]
+    AUTO --> PUSH["notify.mobile_app_example_phone<br/>time-sensitive iff Fire Life Safety row degraded"]
 
     E3 --> RING["room-panel.js re-renders its<br/>integrity ring (opt-in, integrityEntity config)"]
     E3 --> CARD["integrity-card.js re-renders<br/>sources_detail breakdown"]

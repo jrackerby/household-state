@@ -10,7 +10,7 @@
           "attributes": {
             "severity": 2,
             "band": "Elevated",
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
           }
         },
@@ -25,7 +25,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory"
@@ -64,7 +64,7 @@
           "state": "critical",
           "attributes": {
             "severity": 5,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Severe Thunderstorm Warning until 6:00PM EDT"
           }
         },
@@ -81,7 +81,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Severe Thunderstorm Warning"
@@ -116,7 +116,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Tornado Warning until 3:15PM EDT"
           }
         },
@@ -132,7 +132,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Tornado Warning"
@@ -354,7 +354,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 2,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Wind Advisory issued September 3 at 6:02AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
           }
         },
@@ -368,7 +368,7 @@
           "state": "on",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Wind Advisory"
@@ -540,7 +540,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -555,7 +555,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Evacuation Immediate"
@@ -602,7 +602,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory"
@@ -633,7 +633,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 2,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 3 at 3:29AM EDT until September 3 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
           }
         },
@@ -648,7 +648,7 @@
           "state": "on",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory"
@@ -683,7 +683,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 2,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 9 at 3:29AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
           }
         },
@@ -698,7 +698,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory"
@@ -733,7 +733,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 3,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Law Enforcement Warning until 9:45PM"
           }
         },
@@ -748,7 +748,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Law Enforcement Warning"
@@ -783,7 +783,7 @@
           "state": "critical",
           "attributes": {
             "severity": 6,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Civil Danger Warning until 11:00PM"
           }
         },
@@ -798,7 +798,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Civil Danger Warning"
@@ -833,7 +833,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 4,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Tornado Watch until 8:00PM EDT"
           }
         },
@@ -848,7 +848,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Tornado Watch"
@@ -883,7 +883,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Tornado Warning until 3:15PM EDT"
           }
         },
@@ -898,7 +898,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Tornado Warning"
@@ -933,7 +933,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 2,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Wind Advisory issued September 9 at 6:02AM EDT until September 10 at 8:00PM EDT by NWS Greenville-Spartanburg SC"
           }
         },
@@ -947,7 +947,7 @@
           "state": "on",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Wind Advisory"
@@ -982,7 +982,7 @@
           "state": "critical",
           "attributes": {
             "severity": 5,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Severe Thunderstorm Warning until 6:00PM"
           }
         },
@@ -999,7 +999,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Severe Thunderstorm Warning"
@@ -1110,7 +1110,7 @@
           "attributes": {
             "severity": 2,
             "band": "Elevated",
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
           }
         },
@@ -1125,7 +1125,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory",
@@ -1170,7 +1170,7 @@
           "attributes": {
             "severity": 2,
             "band": "Elevated",
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
           }
         },
@@ -1185,7 +1185,7 @@
           "state": "on",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory",
@@ -1383,7 +1383,7 @@
           "state": "critical",
           "attributes": {
             "severity": 5,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "STW until 6PM"
           }
         },
@@ -1400,7 +1400,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Severe Thunderstorm Warning"
@@ -1435,7 +1435,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -1450,7 +1450,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Tornado Warning"
@@ -1484,7 +1484,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -1499,7 +1499,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Tornado Warning"
@@ -1893,7 +1893,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 1,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -1906,7 +1906,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Rip Current Statement"
@@ -1940,7 +1940,7 @@
           "state": "critical",
           "attributes": {
             "severity": 5,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -1953,7 +1953,7 @@
           "state": "on",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Severe Thunderstorm Warning"
@@ -1987,7 +1987,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -2001,7 +2001,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Evacuation Immediate"
@@ -2090,7 +2090,7 @@
           "state": "elevated",
           "attributes": {
             "severity": 2,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory"
           }
         },
@@ -2104,7 +2104,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory"
@@ -2138,7 +2138,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -2597,7 +2597,7 @@
           "attributes": {
             "severity": 2,
             "band": "Elevated",
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
           }
         },
@@ -2612,7 +2612,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory",
@@ -2660,7 +2660,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -2675,7 +2675,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Tornado Warning"
@@ -2714,7 +2714,7 @@
           "attributes": {
             "severity": 2,
             "band": "Elevated",
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
           }
         },
@@ -2729,7 +2729,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory",
@@ -2777,7 +2777,7 @@
           "state": "critical",
           "attributes": {
             "severity": 5,
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Severe Thunderstorm Warning until 6:00PM EDT"
           }
         },
@@ -2794,7 +2794,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Severe Thunderstorm Warning"
@@ -2833,7 +2833,7 @@
           "state": "critical",
           "attributes": {
             "severity": 7,
-            "driver": "nws_union"
+            "driver": "nws_example"
           }
         },
         "sensor.household_state_directive": {
@@ -2848,7 +2848,7 @@
           "state": "off",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Evacuation Immediate"
@@ -2969,7 +2969,7 @@
           "attributes": {
             "severity": 2,
             "band": "Elevated",
-            "driver": "nws_union",
+            "driver": "nws_example",
             "detail": "Heat Advisory issued September 2 at 3:29AM EDT until September 2 at 8:00PM EDT by NWS"
           }
         },
@@ -2984,7 +2984,7 @@
           "state": "on",
           "attributes": {}
         },
-        "sensor.household_state_nws_union": {
+        "sensor.household_state_nws_example": {
           "state": "ok",
           "attributes": {
             "raw_state": "Heat Advisory",

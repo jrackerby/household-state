@@ -58,7 +58,7 @@ def _age(c, key, seconds):
 
 # ======================================================== config entry health
 #
-# OPT-IN (#28, ruled by Joel, reversing #26's opt-out): the row watches only
+# OPT-IN (#28, ruled, reversing #26's opt-out): the row watches only
 # what carries the scope label or sits on a device that does. Every fixture
 # below therefore creates the label and puts the entities under test IN
 # scope; the tests that leave something out are testing the leaving-out.
